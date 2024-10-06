@@ -9,3 +9,4 @@ import "endoflifectl/cmd"
 func main() {
 	cmd.Execute()
 }
+

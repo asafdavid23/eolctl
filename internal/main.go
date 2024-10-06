@@ -1,13 +1,29 @@
 package helpers
 
 import (
-	// "encoding/json"
+	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 )
+
+var languageDetailesFile = map[string]string{
+	"go.mod":           "go",
+	"package.json":     "node.js",
+	"requirements.txt": "python",
+	"java":             ".java",
+}
+
+type PackageJSON struct {
+	Engines struct {
+		Node string `json:node`
+	} `json:"engines"`
+}
 
 func GetAvailableProducts() {
 	url := "https://endoflife.date/api/all.json"
@@ -63,14 +79,6 @@ func GetProduct(product string, version string) []byte {
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
 
-	// if top && version != "" {
-	// 	log.Fatal("Cant top for specific version")
-	// } else {
-	// 	if len(body) > 3 {
-	// 		body = body[:3] // Slice to get the top 3 items
-	// 	}
-	// }
-
 	return body
 }
 
@@ -101,4 +109,81 @@ func ExportToFile(outputData []byte, outputFolder string) {
 	}
 
 	fmt.Println("Content written to file successfully.")
+}
+
+func IdentifyProduct(project string) (string, string) {
+	var product string
+	var productFile string
+
+	filepath.Walk(project, func(path string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			log.Fatalf("Failed to access files or directories in project path: %v", walkErr)
+		}
+
+		if !info.IsDir() {
+			for key := range languageDetailesFile {
+				if key == info.Name() {
+					product = languageDetailesFile[info.Name()]
+					productFile = info.Name()
+				} else {
+					continue
+				}
+			}
+		}
+		return walkErr
+	})
+
+	return product, productFile
+}
+
+func IdentifyProductVersion(product string, project string, productFile string) string {
+	var version string
+
+	s := []string{project, "/", productFile}
+	path := strings.Join(s, "")
+
+	file, err := os.Open(path)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.HasPrefix(line, "go") {
+			version = strings.TrimSpace(strings.TrimPrefix(line, "go"))
+			parts := strings.Split(version, ".")
+
+			if len(parts) >= 2 {
+				version = strings.Join(parts[:len(parts)-1], ".")
+				return version
+			}
+
+		} else if strings.HasPrefix(line, "python==") {
+			version = strings.TrimSpace(strings.TrimPrefix(line, "python=="))
+			parts := strings.Split(version, ".")
+
+			if len(parts) > 2 {
+				version = strings.Join(parts[:len(parts)-1], ".")
+				return version
+			}
+
+		} else if strings.HasPrefix(line, "<java.version>") && strings.HasSuffix(line, "<java.version>") {
+			re := regexp.MustCompile(`<java\.version>(.*?)<\/java\.version>`)
+			matches := re.FindStringSubmatch(line)
+
+			if len(matches) > 1 {
+				version := matches[1]
+				return version
+			}
+
+		}
+	}
+
+	return version
 }
