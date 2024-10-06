@@ -5,6 +5,8 @@
 ## Features
 
 - Check the EOL status of various programming languages and frameworks.
+- Export to a JSON file
+- Scan your code project (GO and Python only supported for now.)
 
 ## Installation
 
