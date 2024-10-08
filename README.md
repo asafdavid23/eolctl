@@ -5,8 +5,9 @@
 ## Features
 
 - Check the EOL status of various programming languages and frameworks.
-- Export to a JSON file
+- Export to a JSON file.
 - Scan your code project (GO and Python only supported for now.)
+- Get a custom range for versions.
 
 ## Installation
 
@@ -44,3 +45,29 @@ bin/eolctl get product --name python --version 3.12 | jq
 
 ```
 
+```bash
+bin/eolctl get prodeuct --name python --min --max 3.12
+```
+
+```
+[
+    {
+        "cycle": "3.12",
+        "latest": "3.12.7",
+        "latestReleaseDate": "2024-10-01",
+        "releaseDate": "2023-10-02"
+    },
+    {
+        "cycle": "3.11",
+        "latest": "3.11.10",
+        "latestReleaseDate": "2024-09-07",
+        "releaseDate": "2022-10-24"
+    },
+    {
+        "cycle": "3.10",
+        "latest": "3.10.15",
+        "latestReleaseDate": "2024-09-07",
+        "releaseDate": "2021-10-04"
+    }
+]
+```

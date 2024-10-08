@@ -41,6 +41,7 @@ var productCmd = &cobra.Command{
 		if enableCustomRange && version != "" {
 			log.Fatal("Custom range can't be run alongside with specific version")
 		} else if enableCustomRange {
+			log.Print("Executing custom range")
 			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
 
 			if outputFolder != "" {

@@ -14,20 +14,20 @@ import (
 	"strings"
 )
 
+type Release struct {
+	Cycle       string `json:"cycle"`
+	ReleaseDate string `json:"releaseDate"`
+	// EOL               string `json:"eol"`
+	Latest            string `json:"latest"`
+	LatestReleaseDate string `json:"latestReleaseDate"`
+	LTS               bool   `json:"lts"`
+}
+
 var languageDetailesFile = map[string]string{
 	"go.mod":           "go",
 	"package.json":     "node.js",
 	"requirements.txt": "python",
 	"java":             ".java",
-}
-
-type Release struct {
-	Cycle             string `json:"cycle"`
-	ReleaseDate       string `json:"releaseDate"`
-	EOL               string `json:"eol"`
-	Latest            string `json:"latest"`
-	LatestReleaseDate string `json:"latestReleaseDate"`
-	LTS               bool   `json:"lts"`
 }
 
 func GetAvailableProducts() {
@@ -98,31 +98,35 @@ func ParseVersion(version string) float64 {
 }
 
 // Helper function to check if a cycle is within a given range
-func IsWithinRange(cycle, min, max string) bool {
-	// Convert the cycle versions to integers for comparison
-	cycleInt, _ := strconv.ParseFloat(cycle, 64)
-	minInt, _ := strconv.ParseFloat(min, 64)
-	maxInt, _ := strconv.ParseFloat(max, 64)
-
-	return cycleInt >= minInt && cycleInt <= maxInt
+func IsWithinRange(cycle, minVersion, maxVersion string) bool {
+	return strings.Compare(cycle, minVersion) >= 0 && strings.Compare(cycle, maxVersion) <= 0
 }
 
 func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, error) {
 
 	var releases []Release
-	var filteredReleases []Release
+	var filteredReleases []map[string]string
 
 	if err := json.Unmarshal([]byte(outputData), &releases); err != nil {
 		log.Fatal(err)
 	}
 
 	for _, release := range releases {
+
 		if IsWithinRange(release.Cycle, minVersion, maxVersion) {
-			filteredReleases = append(filteredReleases, release)
+
+			releaseMap := map[string]string{
+				"cycle":             release.Cycle,
+				"releaseDate":       release.ReleaseDate,
+				"latest":            release.Latest,
+				"latestReleaseDate": release.LatestReleaseDate,
+			}
+
+			filteredReleases = append(filteredReleases, releaseMap)
 		}
 	}
 
-	filteredReleasesJSON, err := json.Marshal(filteredReleases)
+	filteredReleasesJSON, err := json.MarshalIndent(filteredReleases, "", "    ")
 
 	if err != nil {
 		log.Fatal(err)
