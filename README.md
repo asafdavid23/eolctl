@@ -1,3 +1,5 @@
+![image]({https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white})
+
 # End of Life Control (eolctl)
 
 `eolctl` is a command-line tool that helps developers and system administrators manage and monitor the end-of-life (EOL) status of various software products. This tool queries the [endoflife.date](https://endoflife.date/) API to provide real-time information about software versions and their support lifecycle.
@@ -47,7 +49,7 @@ bin/eolctl get product --name python --version 3.12 | jq
 ```
 
 ```bash
-bin/eolctl get prodeuct --name python --min --max 3.12
+bin/eolctl get prodeuct --name python --min 3.10 --max 3.12
 ```
 
 ```
