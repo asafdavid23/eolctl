@@ -5,10 +5,13 @@ package cmd
 
 import (
 	"eolctl/internal"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
 )
+
+var versionsToCompare []string
 
 // productCmd represents the product command
 var productCmd = &cobra.Command{
@@ -16,6 +19,7 @@ var productCmd = &cobra.Command{
 	Short: "Query for specific product EOL information.",
 	Long:  `This command will specify the exact product to qury data from the API.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		initConfig()
 
 		name, _ := cmd.Flags().GetString("name")
@@ -23,9 +27,20 @@ var productCmd = &cobra.Command{
 		outputFolder, _ := cmd.Flags().GetString("output")
 		minVersion, _ := cmd.Flags().GetString("min")
 		maxVersion, _ := cmd.Flags().GetString("max")
+		version1, _ := cmd.Flags().GetString("existing-version")
+		version2, _ := cmd.Flags().GetString("future-version")
 
 		if name == "" {
 			log.Fatal("Product name is required.")
+		}
+
+		cycle1 := helpers.GetProduct(name, version1, outputFolder, minVersion, maxVersion)
+		cycle2 := helpers.GetProduct(name, version2, outputFolder, minVersion, maxVersion)
+
+		if version1 != "" && version2 != "" {
+			cycle1, cycle2 := helpers.CompareTwoVersions(cycle1, cycle2)
+			fmt.Printf("%s\n", string(cycle1))
+			fmt.Printf("%s\n", string(cycle2))
 		}
 
 		helpers.GetProduct(name, version, outputFolder, minVersion, maxVersion)
@@ -48,6 +63,8 @@ func init() {
 	productCmd.Flags().StringP("output", "o", "", "Export to file")
 	productCmd.Flags().String("min", "", "Minimum version to query")
 	productCmd.Flags().String("max", "", "Maximum version to query")
+	productCmd.Flags().String("existing-version", "", "Existing version to compare")
+	productCmd.Flags().String("future-version", "", "Future version to compare")
 }
 
 func initConfig() {

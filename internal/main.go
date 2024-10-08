@@ -14,9 +14,8 @@ import (
 )
 
 type Release struct {
-	Cycle       string `json:"cycle"`
-	ReleaseDate string `json:"releaseDate"`
-	// EOL               string `json:"eol"`
+	Cycle             string `json:"cycle"`
+	ReleaseDate       string `json:"releaseDate"`
 	Latest            string `json:"latest"`
 	LatestReleaseDate string `json:"latestReleaseDate"`
 	LTS               bool   `json:"lts"`
@@ -59,7 +58,7 @@ func GetAvailableProducts() {
 	fmt.Println(string(body))
 }
 
-func GetProduct(product string, version string, outputFolder string, minVersion string, maxVersion string) {
+func GetProduct(product string, version string, outputFolder string, minVersion string, maxVersion string) []byte {
 	var enableCustomRange bool
 	var customRangeOutput []byte
 
@@ -101,14 +100,14 @@ func GetProduct(product string, version string, outputFolder string, minVersion 
 		if outputFolder != "" {
 			ExportToFile(customRangeOutput, outputFolder)
 		} else {
-			fmt.Println(string(customRangeOutput))
+			return customRangeOutput
 		}
 
 	} else if outputFolder != "" {
 		ExportToFile(body, outputFolder)
-	} else {
-		fmt.Println(string(body))
 	}
+
+	return body
 }
 
 // Helper function to check if a cycle is within a given range
@@ -256,4 +255,19 @@ func IdentifyProductVersion(product string, project string, productFile string) 
 	log.Printf("Identified product versoin is: %s", version)
 
 	return version
+}
+
+func CompareTwoVersions(version1, version2 []byte) ([]byte, []byte) {
+
+	// if len(version1) != len(version2) {
+	// 	return
+	// }
+
+	for i := range version1 {
+		if version1[i] != version2[i] {
+			return version1, version2
+		}
+	}
+
+	return nil, nil
 }
