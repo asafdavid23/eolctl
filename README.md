@@ -8,6 +8,7 @@
 - Export to a JSON file.
 - Scan your code project (GO and Python only supported for now.)
 - Get a custom range for versions.
+- Compare between existing and future version
 
 ## Installation
 
