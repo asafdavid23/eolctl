@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
-	// "reflect"
 )
 
 // productCmd represents the product command
@@ -51,11 +50,11 @@ var productCmd = &cobra.Command{
 			}
 		}
 
-		// if outputFolder != "" {
-		// 	helpers.ExportToFile(outputData, outputFolder)
-		// } else {
-		// 	fmt.Println(string(outputData))
-		// }
+		if outputFolder != "" {
+			helpers.ExportToFile(outputData, outputFolder)
+		} else {
+			fmt.Println(string(outputData))
+		}
 	},
 }
 
