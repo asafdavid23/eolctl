@@ -1,4 +1,4 @@
-module endoflifectl
+module eolctl
 
 go 1.23.2
 

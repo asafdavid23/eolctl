@@ -13,7 +13,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "endoflifectl",
+	Use:   "eolctl",
 	Short: "EOL dates and support lifecycles for various products",
 	Long: `endoflife.date aggregates data from various sources and presents it in an understandable and succinct manner. 
 It also makes the data available using an easily accessible API and has iCalendar support.`,
@@ -36,7 +36,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.endoflifectl.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eolctl.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

@@ -4,7 +4,7 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"endoflifectl/internal"
+	"eolctl/internal"
 	"github.com/spf13/cobra"
 )
 

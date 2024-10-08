@@ -10,8 +10,8 @@ import (
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get command for query for data.",
-	Long:  `Using this command will query the data from the API`,
+	Short: "Get command for query the data.",
+	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }
@@ -19,8 +19,6 @@ var getCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(getCmd)
 	getCmd.AddCommand(productCmd)
-	getCmd.AddCommand(availableProductsCmd)
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

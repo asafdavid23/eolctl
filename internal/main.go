@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -19,10 +21,13 @@ var languageDetailesFile = map[string]string{
 	"java":             ".java",
 }
 
-type PackageJSON struct {
-	Engines struct {
-		Node string `json:node`
-	} `json:"engines"`
+type Release struct {
+	Cycle             string `json:"cycle"`
+	ReleaseDate       string `json:"releaseDate"`
+	EOL               string `json:"eol"`
+	Latest            string `json:"latest"`
+	LatestReleaseDate string `json:"latestReleaseDate"`
+	LTS               bool   `json:"lts"`
 }
 
 func GetAvailableProducts() {
@@ -56,6 +61,7 @@ func GetAvailableProducts() {
 }
 
 func GetProduct(product string, version string) []byte {
+
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
 	if version != "" {
@@ -80,6 +86,49 @@ func GetProduct(product string, version string) []byte {
 	body, _ := io.ReadAll(res.Body)
 
 	return body
+}
+
+func ParseVersion(version string) float64 {
+	v, err := strconv.ParseFloat(version, 64)
+
+	if err != nil {
+		log.Fatalf("Failed to parse version %s: %v", version, err)
+	}
+	return v
+}
+
+// Helper function to check if a cycle is within a given range
+func IsWithinRange(cycle, min, max string) bool {
+	// Convert the cycle versions to integers for comparison
+	cycleInt, _ := strconv.ParseFloat(cycle, 64)
+	minInt, _ := strconv.ParseFloat(min, 64)
+	maxInt, _ := strconv.ParseFloat(max, 64)
+
+	return cycleInt >= minInt && cycleInt <= maxInt
+}
+
+func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, error) {
+
+	var releases []Release
+	var filteredReleases []Release
+
+	if err := json.Unmarshal([]byte(outputData), &releases); err != nil {
+		log.Fatal(err)
+	}
+
+	for _, release := range releases {
+		if IsWithinRange(release.Cycle, minVersion, maxVersion) {
+			filteredReleases = append(filteredReleases, release)
+		}
+	}
+
+	filteredReleasesJSON, err := json.Marshal(filteredReleases)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return filteredReleasesJSON, nil
 }
 
 func ExportToFile(outputData []byte, outputFolder string) {

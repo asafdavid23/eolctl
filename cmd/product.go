@@ -4,11 +4,12 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"endoflifectl/internal"
+	"eolctl/internal"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
+	// "reflect"
 )
 
 // productCmd represents the product command
@@ -19,23 +20,42 @@ var productCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig()
 
+		var enableCustomRange bool
+		var customRangeOutput []byte
+
 		name, _ := cmd.Flags().GetString("name")
 		version, _ := cmd.Flags().GetString("version")
-		export, _ := cmd.Flags().GetBool("export")
-		outputFolder := viper.GetString("app.outputFolder")
+		outputFolder, _ := cmd.Flags().GetString("output")
+		minVersion, _ := cmd.Flags().GetString("min")
+		maxVersion, _ := cmd.Flags().GetString("max")
 
 		if name == "" {
 			log.Fatal("Product name is required.")
-
 		}
 
 		outputData := helpers.GetProduct(name, version)
 
-		if export {
-			helpers.ExportToFile(outputData, outputFolder)
-		} else {
-			fmt.Println(string(outputData))
+		if minVersion != "" && maxVersion != "" {
+			enableCustomRange = true
 		}
+
+		if enableCustomRange && version != "" {
+			log.Fatal("Custom range can't be run alongside with specific version")
+		} else if enableCustomRange {
+			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
+
+			if outputFolder != "" {
+				helpers.ExportToFile(customRangeOutput, outputFolder)
+			} else {
+				fmt.Println(string(customRangeOutput))
+			}
+		}
+
+		// if outputFolder != "" {
+		// 	helpers.ExportToFile(outputData, outputFolder)
+		// } else {
+		// 	fmt.Println(string(outputData))
+		// }
 	},
 }
 
@@ -52,8 +72,9 @@ func init() {
 	// is called directly, e.g.:
 	productCmd.Flags().StringP("name", "n", "", "Name of the product")
 	productCmd.Flags().StringP("version", "v", "", "Version of the product")
-	productCmd.Flags().BoolP("export", "e", false, "Export to file")
-	// productCmd.Flags().Bool("top", false, "Get top 3 only")
+	productCmd.Flags().StringP("output", "o", "", "Export to file")
+	productCmd.Flags().String("min", "", "Minimum version to query")
+	productCmd.Flags().String("max", "", "Maximum version to query")
 }
 
 func initConfig() {
@@ -69,6 +90,6 @@ func initConfig() {
 	err := viper.ReadInConfig()
 
 	if err != nil {
-		log.Fatalf("fatal error config file: default %v", err)
+		log.Fatal(err)
 	}
 }
