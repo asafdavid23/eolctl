@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"eolctl/internal"
-	"fmt"
 	"github.com/spf13/cobra"
 )
 
@@ -15,12 +14,15 @@ var projectCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		outputFolder := ""
+		minVersion := ""
+		maxVersion := ""
+
 		projectDir := args[0]
 		product, productFile := helpers.IdentifyProduct(projectDir)
 		version := helpers.IdentifyProductVersion(product, projectDir, productFile)
 
-		data := helpers.GetProduct(product, version)
-		fmt.Println(string(data))
+		helpers.GetProduct(product, version, outputFolder, minVersion, maxVersion)
 	},
 }
 

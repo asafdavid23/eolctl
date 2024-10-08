@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -60,7 +59,9 @@ func GetAvailableProducts() {
 	fmt.Println(string(body))
 }
 
-func GetProduct(product string, version string) []byte {
+func GetProduct(product string, version string, outputFolder string, minVersion string, maxVersion string) {
+	var enableCustomRange bool
+	var customRangeOutput []byte
 
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
@@ -85,16 +86,29 @@ func GetProduct(product string, version string) []byte {
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
 
-	return body
-}
+	// return body
 
-func ParseVersion(version string) float64 {
-	v, err := strconv.ParseFloat(version, 64)
-
-	if err != nil {
-		log.Fatalf("Failed to parse version %s: %v", version, err)
+	if minVersion != "" && maxVersion != "" {
+		enableCustomRange = true
 	}
-	return v
+
+	if enableCustomRange && version != "" {
+		log.Fatal("Custom range can't be run alongside with specific version")
+	} else if enableCustomRange {
+		log.Print("Executing custom range")
+		customRangeOutput, _ = FilterVersions(body, minVersion, maxVersion)
+
+		if outputFolder != "" {
+			ExportToFile(customRangeOutput, outputFolder)
+		} else {
+			fmt.Println(string(customRangeOutput))
+		}
+
+	} else if outputFolder != "" {
+		ExportToFile(body, outputFolder)
+	} else {
+		fmt.Println(string(body))
+	}
 }
 
 // Helper function to check if a cycle is within a given range
@@ -161,7 +175,7 @@ func ExportToFile(outputData []byte, outputFolder string) {
 		log.Fatalf("Error writing to the file: %v", err)
 	}
 
-	fmt.Println("Content written to file successfully.")
+	log.Printf("Content written to file successfully, output file located in: %s", filePath)
 }
 
 func IdentifyProduct(project string) (string, string) {
@@ -186,6 +200,7 @@ func IdentifyProduct(project string) (string, string) {
 		return walkErr
 	})
 
+	log.Printf("Identifed Product is: %s", product)
 	return product, productFile
 }
 
@@ -237,6 +252,8 @@ func IdentifyProductVersion(product string, project string, productFile string) 
 
 		}
 	}
+
+	log.Printf("Identified product versoin is: %s", version)
 
 	return version
 }

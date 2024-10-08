@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"eolctl/internal"
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -19,9 +18,6 @@ var productCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig()
 
-		var enableCustomRange bool
-		var customRangeOutput []byte
-
 		name, _ := cmd.Flags().GetString("name")
 		version, _ := cmd.Flags().GetString("version")
 		outputFolder, _ := cmd.Flags().GetString("output")
@@ -32,30 +28,7 @@ var productCmd = &cobra.Command{
 			log.Fatal("Product name is required.")
 		}
 
-		outputData := helpers.GetProduct(name, version)
-
-		if minVersion != "" && maxVersion != "" {
-			enableCustomRange = true
-		}
-
-		if enableCustomRange && version != "" {
-			log.Fatal("Custom range can't be run alongside with specific version")
-		} else if enableCustomRange {
-			log.Print("Executing custom range")
-			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
-
-			if outputFolder != "" {
-				helpers.ExportToFile(customRangeOutput, outputFolder)
-			} else {
-				fmt.Println(string(customRangeOutput))
-			}
-		}
-
-		if outputFolder != "" {
-			helpers.ExportToFile(outputData, outputFolder)
-		} else {
-			fmt.Println(string(outputData))
-		}
+		helpers.GetProduct(name, version, outputFolder, minVersion, maxVersion)
 	},
 }
 
