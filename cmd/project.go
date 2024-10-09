@@ -14,15 +14,12 @@ var projectCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		outputFolder := ""
-		minVersion := ""
-		maxVersion := ""
 
 		projectDir := args[0]
 		product, productFile := helpers.IdentifyProduct(projectDir)
 		version := helpers.IdentifyProductVersion(product, projectDir, productFile)
 
-		helpers.GetProduct(product, version, outputFolder, minVersion, maxVersion)
+		helpers.GetProduct(product, version)
 	},
 }
 

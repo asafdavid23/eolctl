@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/olekukonko/tablewriter"
+	"gopkg.in/yaml.v2"
 	"io"
 	"log"
 	"net/http"
@@ -18,7 +20,6 @@ type Release struct {
 	ReleaseDate       string `json:"releaseDate"`
 	Latest            string `json:"latest"`
 	LatestReleaseDate string `json:"latestReleaseDate"`
-	LTS               bool   `json:"lts"`
 }
 
 var languageDetailesFile = map[string]string{
@@ -58,7 +59,7 @@ func GetAvailableProducts() {
 	fmt.Println(string(body))
 }
 
-func GetProduct(product string, version string, outputFolder string, minVersion string, maxVersion string) []byte {
+func GetProduct(product string, version string) []byte {
 
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
@@ -246,4 +247,60 @@ func CompareTwoVersions(version1, version2 []byte) ([]byte, []byte) {
 	}
 
 	return nil, nil
+}
+
+func ConvertOutput(outputData []byte, outputType string) error {
+	var releases []Release
+
+	err := json.Unmarshal([]byte(outputData), &releases)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	switch outputType {
+	case "table":
+		PrintTable(releases)
+	case "yaml":
+		PrintYaml(releases)
+	case "text":
+		PrintText(releases)
+	default:
+		return fmt.Errorf("invalid output type: %s", outputType)
+	}
+
+	return nil
+}
+
+func PrintTable(releases []Release) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Cycle", "ReleaseDate", "Latest", "LatestReleaseDate"})
+
+	for _, release := range releases {
+		row := []string{
+			release.Cycle,
+			release.Latest,
+			release.LatestReleaseDate,
+			release.ReleaseDate,
+		}
+		table.Append(row)
+	}
+	table.Render()
+}
+
+func PrintYaml(releases []Release) {
+	yamlData, err := yaml.Marshal(releases)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Print(string(yamlData))
+}
+
+func PrintText(releases []Release) {
+	for _, release := range releases {
+		fmt.Printf("Cycle: %s\nLatest: %s\nLatest Release Date: %s\nRelease Date: %s\n",
+			release.Cycle, release.Latest, release.LatestReleaseDate, release.ReleaseDate)
+	}
 }
