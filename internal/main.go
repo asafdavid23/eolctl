@@ -59,8 +59,6 @@ func GetAvailableProducts() {
 }
 
 func GetProduct(product string, version string, outputFolder string, minVersion string, maxVersion string) []byte {
-	var enableCustomRange bool
-	var customRangeOutput []byte
 
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
@@ -84,28 +82,6 @@ func GetProduct(product string, version string, outputFolder string, minVersion 
 
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
-
-	// return body
-
-	if minVersion != "" && maxVersion != "" {
-		enableCustomRange = true
-	}
-
-	if enableCustomRange && version != "" {
-		log.Fatal("Custom range can't be run alongside with specific version")
-	} else if enableCustomRange {
-		log.Print("Executing custom range")
-		customRangeOutput, _ = FilterVersions(body, minVersion, maxVersion)
-
-		if outputFolder != "" {
-			ExportToFile(customRangeOutput, outputFolder)
-		} else {
-			return customRangeOutput
-		}
-
-	} else if outputFolder != "" {
-		ExportToFile(body, outputFolder)
-	}
 
 	return body
 }
@@ -139,7 +115,7 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 		}
 	}
 
-	filteredReleasesJSON, err := json.MarshalIndent(filteredReleases, "", "    ")
+	filteredReleasesJSON, err := json.Marshal(filteredReleases)
 
 	if err != nil {
 		log.Fatal(err)
@@ -168,7 +144,7 @@ func ExportToFile(outputData []byte, outputFolder string) {
 
 	defer file.Close()
 
-	_, err = fmt.Fprintln(file, string(body))
+	_, err = fmt.Fprint(file, string(body))
 
 	if err != nil {
 		log.Fatalf("Error writing to the file: %v", err)

@@ -22,6 +22,9 @@ var productCmd = &cobra.Command{
 
 		initConfig()
 
+		var enableCustomRange bool
+		var customRangeOutput []byte
+
 		name, _ := cmd.Flags().GetString("name")
 		version, _ := cmd.Flags().GetString("version")
 		outputFolder, _ := cmd.Flags().GetString("output")
@@ -37,13 +40,32 @@ var productCmd = &cobra.Command{
 		cycle1 := helpers.GetProduct(name, version1, outputFolder, minVersion, maxVersion)
 		cycle2 := helpers.GetProduct(name, version2, outputFolder, minVersion, maxVersion)
 
-		if version1 != "" && version2 != "" {
+		outputData := helpers.GetProduct(name, version, outputFolder, minVersion, maxVersion)
+
+		if minVersion != "" && maxVersion != "" {
+			enableCustomRange = true
+		}
+
+		if enableCustomRange && version != "" {
+			log.Fatal("Custom range can't be run alongside with specific version")
+		} else if enableCustomRange {
+			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
+
+			if customRangeOutput != nil && outputFolder != "" {
+				helpers.ExportToFile(customRangeOutput, outputFolder)
+			} else {
+				fmt.Print(string(customRangeOutput))
+			}
+
+		} else if cycle1 != nil && cycle2 != nil {
 			cycle1, cycle2 := helpers.CompareTwoVersions(cycle1, cycle2)
 			fmt.Printf("%s\n", string(cycle1))
 			fmt.Printf("%s\n", string(cycle2))
+		} else if outputFolder != "" {
+			helpers.ExportToFile(outputData, outputFolder)
+		} else {
+			fmt.Print(string(outputData))
 		}
-
-		helpers.GetProduct(name, version, outputFolder, minVersion, maxVersion)
 	},
 }
 
