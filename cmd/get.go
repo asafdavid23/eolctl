@@ -10,8 +10,9 @@ import (
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get command for query the data.",
-	Long:  ``,
+	Short: "Retrieve specific data from the API based on provided parameters.",
+	Long: `The 'get' command is used to fetch detailed data from the API for a specific resource or item. 
+By providing appropriate parameters, you can retrieve information tailored to your request, such as the details of a specific item or resource.`,
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }

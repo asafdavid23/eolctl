@@ -11,8 +11,9 @@ import (
 // projectCmd represents the project command
 var projectCmd = &cobra.Command{
 	Use:   "project",
-	Short: "A brief description of your command",
-	Long:  ``,
+	Short: "Identify and retrieve EOL information for a project based on its codebase.",
+	Long: `The 'project' command analyzes the codebase in a specified project directory to identify the product and its version. 
+It then retrieves End-of-Life (EOL) information for the identified product, providing you with up-to-date status and version details.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		projectDir := args[0]

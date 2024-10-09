@@ -11,8 +11,9 @@ import (
 // availableProductsCmd represents the availableProducts command
 var availableProductsCmd = &cobra.Command{
 	Use:   "available-products",
-	Short: "Get all available products supported by the API",
-	Long:  `Using this command you can look and filter for your relevant product API support.`,
+	Short: "List all products supported by the API.",
+	Long: `The 'available-products' command retrieves and displays a list of all products currently supported by the API. 
+You can filter the list to find relevant products that meet your specific needs, allowing you to quickly identify which products are available for interaction with the API.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		helpers.GetAvailableProducts()
 	},

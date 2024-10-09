@@ -10,8 +10,9 @@ import (
 // scanCmd represents the scan command
 var scanCmd = &cobra.Command{
 	Use:   "scan",
-	Short: "Scan command will help you to scan your code project EOL",
-	Long:  `The command will itdentify your code programming language and check for the right EOL information`,
+	Short: "Scan your code project / dockerfile for End-of-Life (EOL) information.",
+	Long: `The 'scan' command analyzes your code project to identify its programming language and retrieves the relevant End-of-Life (EOL) information. 
+	This tool helps ensure that you are aware of the support status and lifecycle for the programming languages and frameworks used in your project, enabling better maintenance and planning.`,
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }

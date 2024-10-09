@@ -10,8 +10,9 @@ import (
 // getCmd represents the get command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list command for query data.",
-	Long:  `Using this command will query the data from the API`,
+	Short: "Retrieve and display a list of available data from the API.",
+	Long: `The 'list' command allows you to query and retrieve a list of available data from the specified API. 
+It sends a request to the API, gathers the data, and outputs it in a structured format for further inspection or use.`,
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }

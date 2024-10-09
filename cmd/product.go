@@ -14,8 +14,9 @@ import (
 // productCmd represents the product command
 var productCmd = &cobra.Command{
 	Use:   "product",
-	Short: "Query for specific product EOL information.",
-	Long:  `This command will specify the exact product to qury data from the API.`,
+	Short: "Retrieve End-of-Life (EOL) information for a specific product.",
+	Long: `The 'product' command allows you to query the API for detailed End-of-Life (EOL) information about a specific product. 
+By specifying the product name or ID, you can retrieve its EOL status, version information, and other relevant details.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		initConfig()

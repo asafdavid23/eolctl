@@ -14,9 +14,10 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "eolctl",
-	Short: "EOL dates and support lifecycles for various products",
-	Long: `endoflife.date aggregates data from various sources and presents it in an understandable and succinct manner. 
-It also makes the data available using an easily accessible API and has iCalendar support.`,
+	Short: "Access End-of-Life (EOL) dates and support lifecycles for various products.",
+	Long: `The 'eolctl' command-line tool provides users with comprehensive information on End-of-Life (EOL) dates and support lifecycles for a wide range of products. 
+It aggregates data from various reliable sources, presenting it in a clear and concise manner. 
+Additionally, the tool offers an easily accessible API for data retrieval and supports iCalendar format for seamless integration into your scheduling applications.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
