@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
+	"os"
 )
 
 // productCmd represents the product command
@@ -38,9 +39,6 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			log.Fatal("Product name is required.")
 		}
 
-		cycle1 := helpers.GetProduct(name, version1)
-		cycle2 := helpers.GetProduct(name, version2)
-
 		outputData = helpers.GetProduct(name, version)
 
 		if minVersion != "" && maxVersion != "" {
@@ -54,25 +52,34 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 
 			if customRangeOutput != nil && outputFolder != "" {
 				helpers.ExportToFile(customRangeOutput, outputFolder)
+				os.Exit(0)
 			} else if output != "" {
 				helpers.ConvertOutput(customRangeOutput, output)
+				os.Exit(0)
 			} else {
 				fmt.Print(string(customRangeOutput))
+				os.Exit(0)
 			}
 		}
 
-		if cycle1 != nil && cycle2 != nil {
-			cycle1, cycle2 := helpers.CompareTwoVersions(cycle1, cycle2)
+		if version1 != "" && version2 != "" {
+			cycle1 := helpers.GetProduct(name, version1)
+			cycle2 := helpers.GetProduct(name, version2)
+
+			cycle1, cycle2 = helpers.CompareTwoVersions(cycle1, cycle2)
 			fmt.Printf("%s\n", string(cycle1))
 			fmt.Printf("%s\n", string(cycle2))
+			os.Exit(0)
 		}
 
 		if outputFolder != "" && output == "" {
 			helpers.ExportToFile(outputData, outputFolder)
+			os.Exit(0)
 		}
 
 		if output != "" && outputFolder == "" {
 			helpers.ConvertOutput(outputData, output)
+			os.Exit(0)
 		} else {
 			fmt.Print(string(outputData))
 		}

@@ -15,13 +15,6 @@ import (
 	"strings"
 )
 
-type Release struct {
-	Cycle             string `json:"cycle"`
-	ReleaseDate       string `json:"releaseDate"`
-	Latest            string `json:"latest"`
-	LatestReleaseDate string `json:"latestReleaseDate"`
-}
-
 var languageDetailesFile = map[string]string{
 	"go.mod":           "go",
 	"package.json":     "node.js",
@@ -94,25 +87,30 @@ func IsWithinRange(cycle, minVersion, maxVersion string) bool {
 
 func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, error) {
 
-	var releases []Release
+	var result []map[string]interface{}
 	var filteredReleases []map[string]string
 
-	if err := json.Unmarshal([]byte(outputData), &releases); err != nil {
+	if err := json.Unmarshal(outputData, &result); err != nil {
 		log.Fatal(err)
 	}
 
-	for _, release := range releases {
+	for _, release := range result {
+		// Check if Cycle is present and within range
+		if cycleVal, ok := release["cycle"]; ok && cycleVal != nil {
+			if cycle, ok := cycleVal.(string); ok && IsWithinRange(cycle, minVersion, maxVersion) {
+				// Create a new map for filtered release data
+				releaseMap := map[string]string{
+					"cycle":             cycle,
+					"releaseDate":       getStringValue(release["releaseDate"]),
+					"latest":            getStringValue(release["latest"]),
+					"latestReleaseDate": getStringValue(release["latestReleaseDate"]),
+					"lts":               getStringValue(release["lts"]),
+					"eol":               getStringValue(release["eol"]),
+					"support":           getStringValue(release["support"]),
+				}
 
-		if IsWithinRange(release.Cycle, minVersion, maxVersion) {
-
-			releaseMap := map[string]string{
-				"cycle":             release.Cycle,
-				"releaseDate":       release.ReleaseDate,
-				"latest":            release.Latest,
-				"latestReleaseDate": release.LatestReleaseDate,
+				filteredReleases = append(filteredReleases, releaseMap)
 			}
-
-			filteredReleases = append(filteredReleases, releaseMap)
 		}
 	}
 
@@ -123,6 +121,16 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 	}
 
 	return filteredReleasesJSON, nil
+}
+
+func getStringValue(value interface{}) string {
+	if value == nil {
+		return "" // Return an empty string if the value is nil
+	}
+	if str, ok := value.(string); ok {
+		return str // Return the string value
+	}
+	return "" // Return an empty string if type assertion fails
 }
 
 func ExportToFile(outputData []byte, outputFolder string) {
@@ -250,21 +258,20 @@ func CompareTwoVersions(version1, version2 []byte) ([]byte, []byte) {
 }
 
 func ConvertOutput(outputData []byte, outputType string) error {
-	var releases []Release
+	// Define a variable to hold the unmarshalled data
+	var result interface{}
 
-	err := json.Unmarshal([]byte(outputData), &releases)
-
-	if err != nil {
+	// Unmarshal the JSON into the map
+	if err := json.Unmarshal(outputData, &result); err != nil {
 		log.Fatal(err)
 	}
 
+	// Switch case to handle different output types
 	switch outputType {
 	case "table":
-		PrintTable(releases)
+		PrintTable(result)
 	case "yaml":
-		PrintYaml(releases)
-	case "text":
-		PrintText(releases)
+		PrintYaml(result)
 	default:
 		return fmt.Errorf("invalid output type: %s", outputType)
 	}
@@ -272,35 +279,57 @@ func ConvertOutput(outputData []byte, outputType string) error {
 	return nil
 }
 
-func PrintTable(releases []Release) {
+func PrintTable(data interface{}) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Cycle", "ReleaseDate", "Latest", "LatestReleaseDate"})
+	table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate"})
 
-	for _, release := range releases {
+	switch v := data.(type) {
+	case []interface{}:
+		for _, item := range v {
+			if release, ok := item.(map[string]interface{}); ok {
+				row := []string{
+					getStringValue(release["cycle"]),
+					getStringValue(release["releaseDate"]),
+					getStringValue(release["latest"]),
+					getStringValue(release["latestReleaseDate"]),
+					getStringValue(release["lts"]),
+					getStringValue(release["eol"]),
+					getStringValue(release["support"]),
+				}
+				table.Append(row)
+			}
+		}
+	case map[string]interface{}:
 		row := []string{
-			release.Cycle,
-			release.Latest,
-			release.LatestReleaseDate,
-			release.ReleaseDate,
+			getStringValue(v["releaseDate"]),
+			getStringValue(v["latest"]),
+			getStringValue(v["latestReleaseDate"]),
+			getStringValue(v["lts"]),
+			getStringValue(v["eol"]),
+			getStringValue(v["support"]),
 		}
 		table.Append(row)
 	}
+
 	table.Render()
 }
 
-func PrintYaml(releases []Release) {
-	yamlData, err := yaml.Marshal(releases)
+func PrintYaml(data interface{}) {
+	var yamlData []byte
+	var err error
+
+	switch v := data.(type) {
+	case []interface{}:
+		yamlData, err = yaml.Marshal(v)
+	case map[string]interface{}:
+		yamlData, err = yaml.Marshal(v)
+	default:
+		log.Fatalf("unsupported type for yaml marshaling: %T", data)
+	}
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Print(string(yamlData))
-}
-
-func PrintText(releases []Release) {
-	for _, release := range releases {
-		fmt.Printf("Cycle: %s\nLatest: %s\nLatest Release Date: %s\nRelease Date: %s\n",
-			release.Cycle, release.Latest, release.LatestReleaseDate, release.ReleaseDate)
-	}
 }
