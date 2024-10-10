@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
+
+var logger *log.Logger
 
 var languageDetailesFile = map[string]string{
 	"go.mod":           "go",
@@ -28,7 +30,7 @@ func GetAvailableProducts() {
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -38,7 +40,7 @@ func GetAvailableProducts() {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	defer resp.Body.Close()
@@ -46,13 +48,14 @@ func GetAvailableProducts() {
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	fmt.Println(string(body))
 }
 
 func GetProduct(product string, version string) []byte {
+	logger = NewLogger()
 
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
@@ -63,7 +66,7 @@ func GetProduct(product string, version string) []byte {
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
-		log.Fatalf("Failed to send request to the API: %v", err)
+		logger.Fatalf("Failed to send request to the API: %v", err)
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -71,7 +74,7 @@ func GetProduct(product string, version string) []byte {
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		log.Fatalf("Failed to fetch data from the API: %v", err)
+		logger.Fatalf("Failed to fetch data from the API: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -91,7 +94,7 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 	var filteredReleases []map[string]string
 
 	if err := json.Unmarshal(outputData, &result); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	for _, release := range result {
@@ -117,7 +120,7 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 	filteredReleasesJSON, err := json.Marshal(filteredReleases)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	return filteredReleasesJSON, nil
@@ -138,7 +141,7 @@ func ExportToFile(outputData []byte, outputFolder string) {
 	err := os.MkdirAll(outputFolder, os.ModePerm)
 
 	if err != nil {
-		log.Fatalf("Failed to create a folder: %v", err)
+		logger.Fatalf("Failed to create a folder: %v", err)
 	}
 
 	filePath := outputFolder + "/output.json"
@@ -148,7 +151,7 @@ func ExportToFile(outputData []byte, outputFolder string) {
 	file, err := os.Create(filePath)
 
 	if err != nil {
-		log.Fatalf("Failed to create file: %v", err)
+		logger.Fatalf("Failed to create file: %v", err)
 	}
 
 	defer file.Close()
@@ -156,10 +159,10 @@ func ExportToFile(outputData []byte, outputFolder string) {
 	_, err = fmt.Fprint(file, string(body))
 
 	if err != nil {
-		log.Fatalf("Error writing to the file: %v", err)
+		logger.Fatalf("Error writing to the file: %v", err)
 	}
 
-	log.Printf("Content written to file successfully, output file located in: %s", filePath)
+	logger.Printf("Content written to file successfully, output file located in: %s", filePath)
 }
 
 func IdentifyProduct(project string) (string, string) {
@@ -168,7 +171,7 @@ func IdentifyProduct(project string) (string, string) {
 
 	filepath.Walk(project, func(path string, info os.FileInfo, walkErr error) error {
 		if walkErr != nil {
-			log.Fatalf("Failed to access files or directories in project path: %v", walkErr)
+			logger.Fatalf("Failed to access files or directories in project path: %v", walkErr)
 		}
 
 		if !info.IsDir() {
@@ -184,7 +187,7 @@ func IdentifyProduct(project string) (string, string) {
 		return walkErr
 	})
 
-	log.Printf("Identifed Product is: %s", product)
+	logger.Printf("Identifed Product is: %s", product)
 	return product, productFile
 }
 
@@ -197,7 +200,7 @@ func IdentifyProductVersion(product string, project string, productFile string) 
 	file, err := os.Open(path)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	defer file.Close()
@@ -237,7 +240,7 @@ func IdentifyProductVersion(product string, project string, productFile string) 
 		}
 	}
 
-	log.Printf("Identified product versoin is: %s", version)
+	logger.Printf("Identified product versoin is: %s", version)
 
 	return version
 }
@@ -263,7 +266,7 @@ func ConvertOutput(outputData []byte, outputType string) error {
 
 	// Unmarshal the JSON into the map
 	if err := json.Unmarshal(outputData, &result); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	// Switch case to handle different output types
@@ -324,11 +327,11 @@ func PrintYaml(data interface{}) {
 	case map[string]interface{}:
 		yamlData, err = yaml.Marshal(v)
 	default:
-		log.Fatalf("unsupported type for yaml marshaling: %T", data)
+		logger.Fatalf("unsupported type for yaml marshaling: %T", data)
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	fmt.Print(string(yamlData))
