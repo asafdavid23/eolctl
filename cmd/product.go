@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"strings"
 )
 
 // productCmd represents the product command
@@ -34,12 +35,31 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		version1, _ := cmd.Flags().GetString("existing-version")
 		version2, _ := cmd.Flags().GetString("future-version")
 		output, _ := cmd.Flags().GetString("output")
+		logger := helpers.NewLogger()
 
-		if name == "" {
-			log.Fatal("Product name is required.")
+		if name != "" {
+			availbleProducts, err := helpers.GetAvailableProducts()
+
+			if err != nil {
+				logger.Fatalf("Failed to fetch available products from the API: %v", err)
+			}
+
+			if strings.Contains(string(availbleProducts), name) {
+				logger.Infof("%s proudct does exists in the API\n", name)
+			} else {
+				logger.Fatalf("%s doesn't exists on the API", name)
+			}
+		} else {
+			logger.Fatal("Product name is required.")
 		}
 
-		outputData = helpers.GetProduct(name, version)
+		outputData, err := helpers.GetProduct(name, version)
+
+		if err != nil {
+			logger.Fatalf("Failed to fetch data for proudct %s\n", name)
+		} else {
+			logger.Infof("Fetching data for Product %s", name)
+		}
 
 		if minVersion != "" && maxVersion != "" {
 			enableCustomRange = true
@@ -48,6 +68,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		if enableCustomRange && version != "" {
 			log.Fatal("Custom range can't be run alongside with specific version")
 		} else if enableCustomRange {
+			logger.Infof("Custom range mode is enabled, fetching data from version %s, to %s", minVersion, maxVersion)
 			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
 
 			if customRangeOutput != nil && outputFolder != "" {
@@ -63,8 +84,17 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		}
 
 		if version1 != "" && version2 != "" {
-			cycle1 := helpers.GetProduct(name, version1)
-			cycle2 := helpers.GetProduct(name, version2)
+			cycle1, err := helpers.GetProduct(name, version1)
+
+			if err != nil {
+				logger.Fatalf("Failed to fetch data for %s", version1)
+			}
+
+			cycle2, err := helpers.GetProduct(name, version2)
+
+			if err != nil {
+				logger.Fatalf("Failed to fetch data for %s", version2)
+			}
 
 			cycle1, cycle2 = helpers.CompareTwoVersions(cycle1, cycle2)
 			fmt.Printf("%s\n", string(cycle1))
