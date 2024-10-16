@@ -9,13 +9,16 @@ func NewLogger() *log.Logger {
 
 	logger := log.New()
 
+	file, err := os.OpenFile("eolctl.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Set logrus to use multiWriter as the output
-	logger.SetOutput(os.Stdout)
+	logger.SetOutput(file)
 	logger.SetLevel(log.DebugLevel)
-	logger.SetFormatter(&log.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
+	logger.SetFormatter(&log.JSONFormatter{})
 
 	return logger
 }

@@ -15,6 +15,7 @@ import (
 	"strings"
 )
 
+var url = "https://endoflife.date/api/all.json" // Default URL
 var logger *log.Logger
 
 var languageDetailesFile = map[string]string{
@@ -25,7 +26,7 @@ var languageDetailesFile = map[string]string{
 }
 
 func GetAvailableProducts() ([]byte, error) {
-	url := "https://endoflife.date/api/all.json"
+	// url := "https://endoflife.date/api/all.json"
 
 	req, err := http.NewRequest("GET", url, nil)
 
