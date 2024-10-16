@@ -45,3 +45,5 @@ func TestGetAvailableProducts(t *testing.T) {
 		t.Errorf("expected %s, got %s", expected, string(data))
 	}
 }
+
+//
