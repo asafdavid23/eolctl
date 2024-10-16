@@ -1,0 +1,34 @@
+name: Run GO Build & Test
+
+on:
+  push:
+    branches: [ "feature-*", "bugfix-*" ]
+    paths: [ "internal/*" ]
+    
+        
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up GO
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.23
+
+    - name: Display Go version
+      run: |
+        echo "::notice:: Go version is $(go version)"
+
+    - name: Install Dependencies
+      run: |
+        go get .
+    
+    - name: build
+      run: go build -v -o bin/eolctl
+
+
+    - name: Test
+      run: go test -v ./internal

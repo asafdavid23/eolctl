@@ -1,47 +1,37 @@
-package helpers_test
+package helpers
 
 import (
-	"eolctl/internal" // Import your package
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-var mockResponse = []byte(`[ "product1", "product2", "product3" ]`)
-
-// Create a variable to hold the mock function
-var GetAvailableProductsFunc func() ([]byte, error)
-
-// Initialize the function to use either the mock or the real implementation
-func init() {
-	// Set the default function to the real one
-	GetAvailableProductsFunc = helpers.GetAvailableProducts
-}
-
-// In your main code or tests, you can set this to the mock
-func useMock() {
-	GetAvailableProductsFunc = func() ([]byte, error) {
-		return []byte(mockResponse), nil // Return the mock response
-	}
-}
-
+// TestGetAvailableProducts tests the GetAvailableProducts function.
 func TestGetAvailableProducts(t *testing.T) {
-	// Create a new test server with a mock response
+	// Set up a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(mockResponse))
+		w.Header().Set("Content-Type", "application/json")
+		// Simulate a JSON response
+		_, err := w.Write([]byte(`{"products":[{"name":"Go","version":"1.20"},{"name":"Python","version":"3.11"}]}`))
+		if err != nil {
+			t.Fatalf("could not write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
-	// Override the URL in the function (you may need to refactor your code to accept a baseURL for testing)
-	useMock()
+	// Replace the URL in GetAvailableProducts with the mock server URL
+	url = server.URL // You'll need to declare 'url' at package level to make this work.
 
-	data, err := GetAvailableProductsFunc()
+	// Call the function
+	body, err := GetAvailableProducts()
+
 	if err != nil {
-		t.Errorf("expected no error, got %v", err)
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	expected := []byte(`[ "product1", "product2", "product3" ]`)
-	if string(data) != string(expected) {
-		t.Errorf("expected %s, got %s", expected, string(data))
+	// Verify the response
+	expectedBody := `{"products":[{"name":"Go","version":"1.20"},{"name":"Python","version":"3.11"}]}`
+	if string(body) != expectedBody {
+		t.Errorf("expected body %q, got %q", expectedBody, body)
 	}
 }
