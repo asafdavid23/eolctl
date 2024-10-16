@@ -24,7 +24,7 @@ var languageDetailesFile = map[string]string{
 	"java":             ".java",
 }
 
-func GetAvailableProducts() {
+func GetAvailableProducts() ([]byte, error) {
 	url := "https://endoflife.date/api/all.json"
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -47,14 +47,14 @@ func GetAvailableProducts() {
 
 	body, err := io.ReadAll(resp.Body)
 
-	if err != nil {
-		logger.Fatal(err)
-	}
+	// if err != nil {
+	// 	logger.Fatal(err)
+	// }
 
-	fmt.Println(string(body))
+	return body, err
 }
 
-func GetProduct(product string, version string) []byte {
+func GetProduct(product string, version string) ([]byte, error) {
 	logger = NewLogger()
 
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
@@ -78,9 +78,9 @@ func GetProduct(product string, version string) []byte {
 	}
 
 	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 
-	return body
+	return body, err
 }
 
 // Helper function to check if a cycle is within a given range
@@ -284,7 +284,7 @@ func ConvertOutput(outputData []byte, outputType string) error {
 
 func PrintTable(data interface{}) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate"})
+	table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
 	switch v := data.(type) {
 	case []interface{}:
@@ -292,9 +292,9 @@ func PrintTable(data interface{}) {
 			if release, ok := item.(map[string]interface{}); ok {
 				row := []string{
 					getStringValue(release["cycle"]),
-					getStringValue(release["releaseDate"]),
 					getStringValue(release["latest"]),
 					getStringValue(release["latestReleaseDate"]),
+					getStringValue(release["releaseDate"]),
 					getStringValue(release["lts"]),
 					getStringValue(release["eol"]),
 					getStringValue(release["support"]),
