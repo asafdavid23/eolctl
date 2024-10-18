@@ -46,6 +46,8 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eolctl.yaml)")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Display the version of this CLI tool")
+	rootCmd.PersistentFlags().StringP("output", "o", "", "Output type table/json/yaml")
+	rootCmd.PersistentFlags().String("output-path", "", "Export to file")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
