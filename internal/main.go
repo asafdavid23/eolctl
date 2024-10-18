@@ -3,9 +3,9 @@ package helpers
 import (
 	"bufio"
 	"encoding/json"
+	"eolctl/internal/logging"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io"
 	"net/http"
@@ -16,7 +16,7 @@ import (
 )
 
 var url = "https://endoflife.date/api/all.json" // Default URL
-var logger *log.Logger
+var logger = logging.NewLogger()
 
 var languageDetailesFile = map[string]string{
 	"go.mod":           "go",
@@ -56,7 +56,7 @@ func GetAvailableProducts() ([]byte, error) {
 }
 
 func GetProduct(product string, version string) ([]byte, error) {
-	logger = NewLogger()
+	logger = logging.NewLogger()
 
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 

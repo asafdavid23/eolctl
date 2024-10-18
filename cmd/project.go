@@ -4,7 +4,9 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"eolctl/internal"
+	"eolctl/internal/logging"
+	"eolctl/internal/scanner"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
@@ -17,10 +19,50 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 	Run: func(cmd *cobra.Command, args []string) {
 
 		projectDir := args[0]
-		product, productFile := helpers.IdentifyProduct(projectDir)
-		version := helpers.IdentifyProductVersion(product, projectDir, productFile)
+		logger := logging.NewLogger()
+		// product, productFile := helpers.IdentifyProduct(projectDir)
+		// version := helpers.IdentifyProductVersion(product, projectDir, productFile)
 
-		helpers.GetProduct(product, version)
+		// helpers.GetProduct(product, version)
+		language, err := scanner.DetectLanguage(projectDir)
+
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+		fmt.Println(language)
+		packageFile, err := scanner.DetectPackgesFile(projectDir)
+
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+		if language == "JavaScript" {
+			version, err := scanner.DetectVersionFromPackageJSON(packageFile)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+
+			fmt.Print(version)
+		} else if language == "Python" {
+			version, err := scanner.DetectVersionFromRequirementsTxt(packageFile)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+
+			fmt.Print(version)
+		} else if language == "Go" {
+			version, err := scanner.DetectVersionFromGoMod(packageFile)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+
+			fmt.Print(version)
+		}
+
 	},
 }
 

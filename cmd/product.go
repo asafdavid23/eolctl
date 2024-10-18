@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"eolctl/internal"
+	"eolctl/internal/logging"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,10 +33,8 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		outputFolder, _ := cmd.Flags().GetString("output-path")
 		minVersion, _ := cmd.Flags().GetString("min")
 		maxVersion, _ := cmd.Flags().GetString("max")
-		version1, _ := cmd.Flags().GetString("existing-version")
-		version2, _ := cmd.Flags().GetString("future-version")
 		output, _ := cmd.Flags().GetString("output")
-		logger := helpers.NewLogger()
+		logger := logging.NewLogger()
 
 		if name != "" {
 			availbleProducts, err := helpers.GetAvailableProducts()
@@ -83,25 +82,6 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			}
 		}
 
-		if version1 != "" && version2 != "" {
-			cycle1, err := helpers.GetProduct(name, version1)
-
-			if err != nil {
-				logger.Fatalf("Failed to fetch data for %s", version1)
-			}
-
-			cycle2, err := helpers.GetProduct(name, version2)
-
-			if err != nil {
-				logger.Fatalf("Failed to fetch data for %s", version2)
-			}
-
-			cycle1, cycle2 = helpers.CompareTwoVersions(cycle1, cycle2)
-			fmt.Printf("%s\n", string(cycle1))
-			fmt.Printf("%s\n", string(cycle2))
-			os.Exit(0)
-		}
-
 		if outputFolder != "" && output == "" {
 			helpers.ExportToFile(outputData, outputFolder)
 			os.Exit(0)
@@ -129,8 +109,6 @@ func init() {
 	// is called directly, e.g.:
 	productCmd.Flags().StringP("name", "n", "", "Name of the product")
 	productCmd.Flags().StringP("version", "v", "", "Version of the product")
-	productCmd.Flags().StringP("output", "o", "", "Output type table/json/yaml")
-	productCmd.Flags().String("output-path", "", "Export to file")
 	productCmd.Flags().String("min", "", "Minimum version to query")
 	productCmd.Flags().String("max", "", "Maximum version to query")
 	productCmd.Flags().String("existing-version", "", "Existing version to compare")
