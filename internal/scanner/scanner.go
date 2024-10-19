@@ -12,27 +12,16 @@ import (
 )
 
 var languageMap = map[string]string{
-	".go":    "Go",
-	".js":    "JavaScript",
-	".ts":    "TypeScript",
-	".py":    "Python",
-	".rb":    "Ruby",
-	".java":  "Java",
-	".cpp":   "C++",
-	".cs":    "C#",
-	".php":   "PHP",
-	".html":  "HTML",
-	".css":   "CSS",
-	".rs":    "Rust",
-	".sh":    "Shell",
-	".swift": "Swift",
-	".kt":    "Kotlin",
-	".dart":  "Dart",
+	".go": "Go",
+	".js": "JavaScript",
+	".py": "Python",
 }
 
 // For reading from package.json
 type PackageJSON struct {
-	Version string `json:"version"`
+	Engines struct {
+		Node string `json:"node"`
+	} `json:"engines"`
 }
 
 // DetectLanguage scans the directory and identifies the programming language based on file extensions.
@@ -81,8 +70,11 @@ func DetectPackgesFile(projectDir string) (string, error) {
 			return err
 		}
 		if !d.IsDir() {
-			packagesFile = path
-			return filepath.SkipDir // Stop once we've found the first package.json
+			if filepath.Base(path) == "package.json" || filepath.Base(path) == "go.mod" {
+				packagesFile = path
+				return filepath.SkipDir // Stop once we've found the first package.json or go.mod
+			}
+
 		}
 		return nil
 	})
@@ -113,8 +105,8 @@ func DetectVersionFromPackageJSON(path string) (string, error) {
 		return "", err
 	}
 
-	if pkg.Version != "" {
-		return pkg.Version, nil
+	if pkg.Engines.Node != "" {
+		return pkg.Engines.Node, nil
 	}
 	return "Unknown", nil
 }

@@ -4,10 +4,11 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"eolctl/internal"
 	"eolctl/internal/logging"
 	"eolctl/internal/scanner"
-	"fmt"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 // projectCmd represents the project command
@@ -17,9 +18,11 @@ var projectCmd = &cobra.Command{
 	Long: `The 'project' command analyzes the codebase in a specified project directory to identify the product and its version. 
 It then retrieves End-of-Life (EOL) information for the identified product, providing you with up-to-date status and version details.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var outputData []byte
 
 		projectDir := args[0]
 		logger := logging.NewLogger()
+		output, _ := cmd.Flags().GetString("output")
 		// product, productFile := helpers.IdentifyProduct(projectDir)
 		// version := helpers.IdentifyProductVersion(product, projectDir, productFile)
 
@@ -30,7 +33,6 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			logger.Fatal(err)
 		}
 
-		fmt.Println(language)
 		packageFile, err := scanner.DetectPackgesFile(projectDir)
 
 		if err != nil {
@@ -44,15 +46,24 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 				logger.Fatal(err)
 			}
 
-			fmt.Print(version)
-		} else if language == "Python" {
-			version, err := scanner.DetectVersionFromRequirementsTxt(packageFile)
+			language = "nodejs"
+			parts := strings.Split(version, ".")
+			shortVersion := parts[0]
+
+			outputData, err = helpers.GetProduct(language, shortVersion)
 
 			if err != nil {
 				logger.Fatal(err)
 			}
 
-			fmt.Print(version)
+			// } else if language == "Python" {
+			// 	version, err := scanner.DetectVersionFromRequirementsTxt(packageFile)
+
+			// 	if err != nil {
+			// 		logger.Fatal(err)
+			// 	}
+
+			// 	fmt.Print(version)
 		} else if language == "Go" {
 			version, err := scanner.DetectVersionFromGoMod(packageFile)
 
@@ -60,7 +71,18 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 				logger.Fatal(err)
 			}
 
-			fmt.Print(version)
+			parts := strings.Split(version, ".")
+			shortVersion := parts[0] + "." + parts[1]
+
+			outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+		}
+
+		if output != "" {
+			helpers.ConvertOutput(outputData, output)
 		}
 
 	},
