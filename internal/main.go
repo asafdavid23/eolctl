@@ -287,6 +287,12 @@ func PrintTable(data interface{}) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
+	// ANSI escape codes for red color and reset
+	const (
+		redColor   = "\033[31m"
+		resetColor = "\033[0m"
+	)
+
 	switch v := data.(type) {
 	case []interface{}:
 		for _, item := range v {
@@ -297,7 +303,7 @@ func PrintTable(data interface{}) {
 					getStringValue(release["latestReleaseDate"]),
 					getStringValue(release["releaseDate"]),
 					getStringValue(release["lts"]),
-					getStringValue(release["eol"]),
+					redColor + getStringValue(release["eol"]) + resetColor,
 					getStringValue(release["support"]),
 				}
 				table.Append(row)
@@ -305,11 +311,12 @@ func PrintTable(data interface{}) {
 		}
 	case map[string]interface{}:
 		row := []string{
-			getStringValue(v["releaseDate"]),
+			getStringValue(v["cycle"]),
 			getStringValue(v["latest"]),
 			getStringValue(v["latestReleaseDate"]),
+			getStringValue(v["releaseDate"]),
 			getStringValue(v["lts"]),
-			getStringValue(v["eol"]),
+			redColor + getStringValue(v["eol"]) + resetColor,
 			getStringValue(v["support"]),
 		}
 		table.Append(row)
