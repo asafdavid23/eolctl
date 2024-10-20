@@ -21,10 +21,6 @@ jobs:
     - name: Display Go version
       run: |
         echo "::notice:: Go version is $(go version)"
-
-    - name: Install Dependencies
-      run: |
-        go get .
     
     - name: build
-      run: go build -v -o bin/eolctl
+      run: go build -o bin/eolctl
