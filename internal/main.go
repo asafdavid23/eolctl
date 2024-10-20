@@ -169,7 +169,6 @@ func ConvertOutput(outputData []byte, outputType string) error {
 
 func PrintTable(data interface{}) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
 	switch v := data.(type) {
 	case []interface{}:
