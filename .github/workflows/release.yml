@@ -24,7 +24,7 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          name: eolctl-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: '*'
           path: output/
 
       - name: Create release
