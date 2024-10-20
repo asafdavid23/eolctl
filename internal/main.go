@@ -201,7 +201,6 @@ func PrintTable(data interface{}) {
 		table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
 		row := []string{
-			getStringValue(v["cycle"]),
 			getStringValue(v["latest"]),
 			getStringValue(v["latestReleaseDate"]),
 			getStringValue(v["releaseDate"]),
