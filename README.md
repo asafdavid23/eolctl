@@ -74,6 +74,27 @@ eolctl scan project /tmp/testproj --output table
 +--------+-------------------+-------------+-----+-----+---------+
 ```
 
+## CI Integration
+
+`eolctl` is perfect for use in CI/CD pipelines to ensure the languages and versions in your project are not deprecated. Here's an example GitHub Action workflow:
+
+```yaml
+name: Check EOL
+
+on: [push]
+
+jobs:
+  check-eol:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run eolctl
+      run: |
+        curl -LO https://github.com/asafdavid23/eolctl/releases/latest/download/eolctl
+        chmod +x eolctl
+        ./eolctl scan proejct .
+```
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes. Refer to the Contributing Guide for more information.
