@@ -34,30 +34,31 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		minVersion, _ := cmd.Flags().GetString("min")
 		maxVersion, _ := cmd.Flags().GetString("max")
 		output, _ := cmd.Flags().GetString("output")
-		logger := logging.NewLogger()
+		logLevel, _ := cmd.Flags().GetString("log-level")
+
+		logger := logging.NewLogger(logLevel)
 
 		if name != "" {
+			logger.Debug("Fetching available products list from the API")
 			availbleProducts, err := helpers.GetAvailableProducts()
 
 			if err != nil {
 				logger.Fatalf("Failed to fetch available products from the API: %v", err)
 			}
 
-			if strings.Contains(string(availbleProducts), name) {
-				logger.Infof("%s proudct does exists in the API\n", name)
-			} else {
+			logger.Debug("Verifying product does exist on the API")
+			if !strings.Contains(string(availbleProducts), name) {
 				logger.Fatalf("%s doesn't exists on the API", name)
 			}
 		} else {
 			logger.Fatal("Product name is required.")
 		}
 
+		logger.Debug("Fetching product data from the API")
 		outputData, err := helpers.GetProduct(name, version)
 
 		if err != nil {
 			logger.Fatalf("Failed to fetch data for proudct %s\n\n", name)
-		} else {
-			logger.Infof("Fetching data for Product %s", name)
 		}
 
 		if minVersion != "" && maxVersion != "" {
@@ -65,9 +66,9 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		}
 
 		if enableCustomRange && version != "" {
-			log.Fatal("Custom range can't be run alongside with specific version")
+			logger.Fatal("Custom range can't be run alongside with specific version")
 		} else if enableCustomRange {
-			logger.Infof("Custom range mode is enabled, fetching data from version %s, to %s", minVersion, maxVersion)
+			logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
 			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
 
 			if customRangeOutput != nil && outputFolder != "" {

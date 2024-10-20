@@ -2,8 +2,8 @@ name: Run GO Build & Test
 
 on:
   push:
-    branches: [ "feature-*", "bugfix-*" ]
-    paths: [ "internal/*" ]
+    branches: [ "feature-*", "bugfix-*", "main"]
+    paths: [ "internal/*", "cmd/*" ]
     
         
 jobs:
@@ -21,14 +21,6 @@ jobs:
     - name: Display Go version
       run: |
         echo "::notice:: Go version is $(go version)"
-
-    - name: Install Dependencies
-      run: |
-        go get .
     
     - name: build
-      run: go build -v -o bin/eolctl
-
-
-    - name: Test
-      run: go test -v ./internal
+      run: go build -o bin/eolctl

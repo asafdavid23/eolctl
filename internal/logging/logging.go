@@ -3,22 +3,29 @@ package logging
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
-func NewLogger() *log.Logger {
+func NewLogger(logLevel string) *log.Logger {
 
 	logger := log.New()
 
-	file, err := os.OpenFile("eolctl.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	level, err := log.ParseLevel(strings.ToLower(logLevel))
 
 	if err != nil {
-		log.Fatal(err)
+		logger.SetLevel(log.InfoLevel)
+		logger.Warnf("Invalid log level '%s', defaulting to Info level.", logLevel)
+	} else {
+		logger.SetLevel(level)
 	}
 
 	// Set logrus to use multiWriter as the output
-	logger.SetOutput(file)
-	logger.SetLevel(log.DebugLevel)
-	logger.SetFormatter(&log.JSONFormatter{})
+	logger.SetOutput(os.Stderr)
+	// Set the log formatter with timestamp and log level
+	logger.SetFormatter(&log.TextFormatter{
+		FullTimestamp:   true,                  // Enables full timestamp
+		TimestampFormat: "2006-01-02 15:04:05", // Custom timestamp format
+	})
 
 	return logger
 }
