@@ -53,6 +53,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Create Git tag
+        run: |
+          git tag ${{ github.event.inputs.version }}
+          git push origin ${{ github.event.inputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
