@@ -6,7 +6,6 @@ package cmd
 import (
 	"eolctl/internal"
 	"eolctl/internal/logging"
-	"fmt"
 	"github.com/spf13/cobra"
 )
 
@@ -17,14 +16,17 @@ var availableProductsCmd = &cobra.Command{
 	Long: `The 'available-products' command retrieves and displays a list of all products currently supported by the API. 
 You can filter the list to find relevant products that meet your specific needs, allowing you to quickly identify which products are available for interaction with the API.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := logging.NewLogger()
+		logLevel, _ := cmd.Flags().GetString("log-level")
+		output, _ := cmd.Flags().GetString("output")
+
+		logger := logging.NewLogger(logLevel)
 		outputData, err := helpers.GetAvailableProducts()
 
 		if err != nil {
 			logger.Fatalf("Failed to fetch available products from the API: %v", err)
 		}
 
-		fmt.Println(string(outputData))
+		helpers.ConvertOutput(outputData, output)
 	},
 }
 

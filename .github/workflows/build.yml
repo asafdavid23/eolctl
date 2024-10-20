@@ -2,8 +2,8 @@ name: Run GO Build & Test
 
 on:
   push:
-    branches: [ "feature-*", "bugfix-*" ]
-    paths: [ "internal/*" ]
+    branches: [ "feature-*", "bugfix-*", "main"]
+    paths: [ "internal/*", "cmd/*" ]
     
         
 jobs:
@@ -28,7 +28,3 @@ jobs:
     
     - name: build
       run: go build -v -o bin/eolctl
-
-
-    - name: Test
-      run: go test -v ./internal

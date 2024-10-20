@@ -21,18 +21,20 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 		var outputData []byte
 
 		projectDir := args[0]
-		logger := logging.NewLogger()
-		output, _ := cmd.Flags().GetString("output")
-		// product, productFile := helpers.IdentifyProduct(projectDir)
-		// version := helpers.IdentifyProductVersion(product, projectDir, productFile)
+		logLevel, _ := cmd.Flags().GetString("log-level")
 
-		// helpers.GetProduct(product, version)
+		logger := logging.NewLogger(logLevel)
+		output, _ := cmd.Flags().GetString("output")
+
+		logger.Debug("Detecting project programming language")
 		language, err := scanner.DetectLanguage(projectDir)
+		logger.Debugf("Project language is %s: ", language)
 
 		if err != nil {
 			logger.Fatal(err)
 		}
 
+		logger.Debug("Detecting package file package.json / go.mod")
 		packageFile, err := scanner.DetectPackgesFile(projectDir)
 
 		if err != nil {
@@ -40,6 +42,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 		}
 
 		if language == "JavaScript" {
+			logger.Debug("Detect version from pacakge.json")
 			version, err := scanner.DetectVersionFromPackageJSON(packageFile)
 
 			if err != nil {
@@ -50,6 +53,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			parts := strings.Split(version, ".")
 			shortVersion := parts[0]
 
+			logger.Debug("Fetching project product version from the API")
 			outputData, err = helpers.GetProduct(language, shortVersion)
 
 			if err != nil {
@@ -65,6 +69,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 
 			// 	fmt.Print(version)
 		} else if language == "Go" {
+			logger.Debug("Detect version from go.mod")
 			version, err := scanner.DetectVersionFromGoMod(packageFile)
 
 			if err != nil {
@@ -74,6 +79,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			parts := strings.Split(version, ".")
 			shortVersion := parts[0] + "." + parts[1]
 
+			logger.Debug("Fetching project product version from the API")
 			outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion)
 
 			if err != nil {

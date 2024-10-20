@@ -23,6 +23,7 @@ Additionally, the tool offers an easily accessible API for data retrieval and su
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+
 		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
 			fmt.Println("eolctl version:", version)
 			os.Exit(0)
@@ -48,6 +49,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Display the version of this CLI tool")
 	rootCmd.PersistentFlags().StringP("output", "o", "", "Output type table/json/yaml")
 	rootCmd.PersistentFlags().String("output-path", "", "Export to file")
+	rootCmd.PersistentFlags().String("log-level", "", "Set log level")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
