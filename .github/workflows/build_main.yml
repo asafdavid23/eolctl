@@ -29,7 +29,7 @@ jobs:
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o output/mycli-${{ matrix.goos }}-${{ matrix.goarch }} .
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: mycli-binaries
           path: output/
