@@ -26,10 +26,10 @@ jobs:
       - name: Build
         run: |
           mkdir -p output
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o output/mycli-${{ matrix.goos }}-${{ matrix.goarch }} .
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o output/eolctl-${{ matrix.goos }}-${{ matrix.goarch }} .
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: mycli-binaries
+          name: eolctl-${{ matrix.goos }}-${{ matrix.goarch }}
           path: output/
