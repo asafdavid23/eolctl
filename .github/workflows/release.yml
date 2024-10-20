@@ -1,55 +1,30 @@
-name: Build and Release
+name: Release Artifacts
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version for the release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23' # Specify the Go version you are using
-
-      - name: Build
-        run: |
-          mkdir -p output
-          GOOS=${{ matrix.gos }} GOARCH=${{ matrix.goarch }} go build -o output/mycli-${{ matrix.goos }}-${{ matrix.goarch }} .
-
-      - name: Upload binaries
-        uses: actions/upload-artifact@v2
-        with:
-          name: mycli-binaries
-          path: output/
-
   release:
     runs-on: ubuntu-latest
-    needs: build
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get release information
-        id: get_release
-        run: |
-          echo "::set-output name=tag::$(echo ${GITHUB_REF##*/})"
+      - name: Download binaries
+        uses: actions/download-artifact@v2
+        with:
+          name: mycli-binaries
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-          tag: ${{ steps.get_release.outputs.tag }}
+          tag: ${{ github.event.inputs.version }}
           files: output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
