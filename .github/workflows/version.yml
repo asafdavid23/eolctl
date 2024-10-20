@@ -49,4 +49,5 @@ jobs:
         body: "This PR updates the version to the latest tag: $TAG"
         base: main
         branch: $BRANCH_NAME
+        delete-branch: true
         token: ${{ secrets.GITHUB_TOKEN }}
