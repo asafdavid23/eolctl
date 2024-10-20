@@ -14,12 +14,6 @@
 
 ## Installation
 
-### Prerequisites
-
-Ensure you have the following installed on your machine:
-
-- Go (version 1.16 or higher)
-
 You can install eolctl by downloading the latest release from the [releases page](https://github.com/asafdavid23/eolctl/releases)
 
 ```bash
@@ -40,45 +34,50 @@ brew install eolctl
 ## Usage
 
 ```bash
-eolctl get product --name python --version 3.12
+eolctl get product --name go --version 1.23
 
 ```
 
 ```
-{
-  "releaseDate": "2023-10-02",
-  "eol": "2028-10-31",
-  "latest": "3.12.7",
-  "latestReleaseDate": "2024-10-01",
-  "lts": false,
-  "support": "2025-04-02"
-}
++--------+-------------------+-------------+-----+-----+---------+
+| LATEST | LATESTRELEASEDATE | RELEASEDATE | LTS | EOL | SUPPORT |
++--------+-------------------+-------------+-----+-----+---------+
+| 1.23.2 | 2024-10-01        | 2024-08-13  |     |     |         |
++--------+-------------------+-------------+-----+-----+---------+
 
 ```
 
 ```bash
-bin/eolctl get prodeuct --name python --min 3.10 --max 3.12
+eolctl get prodeuct --name python --min 3.10 --max 3.12
 ```
 
 ```
-[
-    {
-        "cycle": "3.12",
-        "latest": "3.12.7",
-        "latestReleaseDate": "2024-10-01",
-        "releaseDate": "2023-10-02"
-    },
-    {
-        "cycle": "3.11",
-        "latest": "3.11.10",
-        "latestReleaseDate": "2024-09-07",
-        "releaseDate": "2022-10-24"
-    },
-    {
-        "cycle": "3.10",
-        "latest": "3.10.15",
-        "latestReleaseDate": "2024-09-07",
-        "releaseDate": "2021-10-04"
-    }
-]
++-------+---------+-------------------+-------------+-----+------------+------------+
+| CYCLE | LATEST  | LATESTRELEASEDATE | RELEASEDATE | LTS |    EOL     |  SUPPORT   |
++-------+---------+-------------------+-------------+-----+------------+------------+
+|  3.13 | 3.13.0  | 2024-10-07        | 2024-10-07  |     | 2029-10-31 | 2026-10-01 |
+|  3.12 | 3.12.7  | 2024-10-01        | 2023-10-02  |     | 2028-10-31 | 2025-04-02 |
+|  3.11 | 3.11.10 | 2024-09-07        | 2022-10-24  |     | 2027-10-31 | 2024-04-01 |
+|  3.10 | 3.10.15 | 2024-09-07        | 2021-10-04  |     | 2026-10-31 | 2023-04-05 |
++-------+---------+-------------------+-------------+-----+------------+------------+
 ```
+
+```bash
+eolctl scan project /tmp/testproj --output table
+```
+
+```
++--------+-------------------+-------------+-----+-----+---------+
+| LATEST | LATESTRELEASEDATE | RELEASEDATE | LTS | EOL | SUPPORT |
++--------+-------------------+-------------+-----+-----+---------+
+| 1.23.2 | 2024-10-01        | 2024-08-13  |     |     |         |
++--------+-------------------+-------------+-----+-----+---------+
+```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes. Refer to the Contributing Guide for more information.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
