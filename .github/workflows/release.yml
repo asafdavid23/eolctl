@@ -45,6 +45,9 @@ jobs:
     needs: build
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Create Git tag
         run: |
           git tag ${{ github.event.inputs.version }}
