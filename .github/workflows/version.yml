@@ -36,6 +36,8 @@ jobs:
 
     - name: Push changes
       run: git push origin $BRANCH_NAME
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v7
@@ -44,3 +46,4 @@ jobs:
         body: "This PR updates the version to the latest tag: $TAG"
         base: main
         branch: $BRANCH_NAME
+        token: ${{ secrets.GITHUB_TOKEN }}
