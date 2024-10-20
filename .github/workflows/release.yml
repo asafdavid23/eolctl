@@ -1,4 +1,4 @@
-name: Release Artifacts
+name: Draft New Release
 
 on:
   workflow_dispatch:
