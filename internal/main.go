@@ -173,18 +173,6 @@ func PrintTable(data interface{}) {
 
 	switch v := data.(type) {
 	case []interface{}:
-<<<<<<< Updated upstream
-		for _, item := range v {
-			if release, ok := item.(map[string]interface{}); ok {
-				row := []string{
-					getStringValue(release["cycle"]),
-					getStringValue(release["latest"]),
-					getStringValue(release["latestReleaseDate"]),
-					getStringValue(release["releaseDate"]),
-					getStringValue(release["lts"]),
-					redColor + getStringValue(release["eol"]) + resetColor,
-					getStringValue(release["support"]),
-=======
 		if _, ok := v[0].(string); ok {
 			// Handle []string case
 			table.SetHeader([]string{"Product"})
@@ -207,16 +195,12 @@ func PrintTable(data interface{}) {
 						getStringValue(release["support"]),
 					}
 					table.Append(row)
->>>>>>> Stashed changes
 				}
 			}
 		}
 	case map[string]interface{}:
-<<<<<<< Updated upstream
-=======
 		table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
->>>>>>> Stashed changes
 		row := []string{
 			getStringValue(v["cycle"]),
 			getStringValue(v["latest"]),
