@@ -7,10 +7,9 @@
 ## Features
 
 - Check the EOL status of various programming languages and frameworks.
-- Export to a JSON file.
-- Scan your code project (GO and Python only supported for now.)
+- Scan your code project (GO and JS only supported for now.)
 - Get a custom range for versions.
-- Compare between existing and future version
+- Export to JSON file
 
 
 ## Installation
@@ -21,19 +20,27 @@ Ensure you have the following installed on your machine:
 
 - Go (version 1.16 or higher)
 
-### Clone the Repository
+You can install eolctl by downloading the latest release from the [releases page](https://github.com/asafdavid23/eolctl/releases)
 
 ```bash
-git clone https://github.com/asafdavid23/eolctl.git
-cd eolctl/
-go build bin/eolctl
+curl -LO https://github.com/asafdavid23/eolctl/releases/latest/download/eolctl
+chmod +x eolctl
+sudo mv eolctl /usr/local/bin/
+```
+For Windows, download the binary and add it to your system PATH.
+
+Alternatively, you use brew for (MacOS / Linux)
+```bash
+brew tap asafdavid23/tap
+brew update
+brew install eolctl
 ```
 
 
-## Examples
+## Usage
 
 ```bash
-bin/eolctl get product --name python --version 3.12 | jq
+eolctl get product --name python --version 3.12
 
 ```
 
