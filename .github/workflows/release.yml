@@ -53,13 +53,13 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          name: '*'
-          path: output/
+          name: eolctl-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: artifacts/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}
-          files: output/*
+          files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
