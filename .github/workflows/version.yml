@@ -15,10 +15,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Get Latest Tag
-      id: get_tag
-      run: echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-
     - name: Craete New Branch
       run: |
         BRANCH_NAME="update-version-${{ github.ref }}"
