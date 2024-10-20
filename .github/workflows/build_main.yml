@@ -1,0 +1,35 @@
+name: Build Multi-Arch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23' # Specify the Go version you are using
+
+      - name: Build
+        run: |
+          mkdir -p output
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o output/mycli-${{ matrix.goos }}-${{ matrix.goarch }} .
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: mycli-binaries
+          path: output/
