@@ -9,13 +9,42 @@ on:
         default: 'v1.0.0'
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
-        matrix:
-          goos: [linux, darwin, windows]
-          goarch: [amd64, arm64]
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23' # Specify the Go version you are using
+
+      - name: Build
+        run: |
+          mkdir -p output
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o output/eolctl-${{ matrix.goos }}-${{ matrix.goarch }} .
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: eolctl-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: output/
+      
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
 
     steps:
       - name: Checkout code
