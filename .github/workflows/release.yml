@@ -12,6 +12,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
+    strategy:
+        matrix:
+          goos: [linux, darwin, windows]
+          goarch: [amd64, arm64]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -19,7 +24,8 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          name: mycli-binaries
+          name: eolctl-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: output/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
