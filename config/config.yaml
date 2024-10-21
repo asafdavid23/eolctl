@@ -1,2 +1,5 @@
-app:
-  outputFolder: /tmp/
+output:
+  type: table
+
+logging:
+  log-level: debug

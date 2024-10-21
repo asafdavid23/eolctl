@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"os"
 )
 
@@ -40,6 +41,22 @@ func Execute() {
 	}
 }
 
+func initConfig() {
+	if cfgFile != "" {
+		// Use config file from the flag
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Default config file path
+		viper.AddConfigPath("$HOME/")
+		viper.SetConfigName(".eolctl.yaml")
+	}
+
+	// Read the config file (if it exists)
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+}
+
 func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -48,8 +65,16 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eolctl.yaml)")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Display the version of this CLI tool")
 	rootCmd.PersistentFlags().StringP("output", "o", "", "Output type table/json/yaml")
-	rootCmd.PersistentFlags().String("output-path", "", "Export to file")
+	rootCmd.PersistentFlags().String("export-path", "", "Export to file")
 	rootCmd.PersistentFlags().String("log-level", "", "Set log level")
+
+	// Bind flags to Vipe
+	viper.BindPFlag("output.type", rootCmd.PersistentFlags().Lookup("output"))
+	viper.BindPFlag("export.path", rootCmd.PersistentFlags().Lookup("export-path"))
+	viper.BindPFlag("loggging.log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+
+	// Read in config file
+	cobra.OnInitialize(initConfig)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

@@ -7,6 +7,7 @@ import (
 	"eolctl/internal"
 	"eolctl/internal/logging"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // availableProductsCmd represents the availableProducts command
@@ -16,8 +17,10 @@ var availableProductsCmd = &cobra.Command{
 	Long: `The 'available-products' command retrieves and displays a list of all products currently supported by the API. 
 You can filter the list to find relevant products that meet your specific needs, allowing you to quickly identify which products are available for interaction with the API.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logLevel, _ := cmd.Flags().GetString("log-level")
-		output, _ := cmd.Flags().GetString("output")
+		// logLevel, _ := cmd.Flags().GetString("log-level")
+		logLevel := viper.GetString("logging.log-level")
+		// output, _ := cmd.Flags().GetString("output")
+		output := viper.GetString("output.type")
 
 		logger := logging.NewLogger(logLevel)
 		outputData, err := helpers.GetAvailableProducts()

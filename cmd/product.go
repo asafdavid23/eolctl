@@ -8,8 +8,8 @@ import (
 	"eolctl/internal/logging"
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"log"
+	// "github.com/spf13/viper"
+	// "log"
 	"os"
 	"strings"
 )
@@ -21,8 +21,6 @@ var productCmd = &cobra.Command{
 	Long: `The 'product' command allows you to query the API for detailed End-of-Life (EOL) information about a specific product. 
 By specifying the product name or ID, you can retrieve its EOL status, version information, and other relevant details.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		initConfig()
 
 		var enableCustomRange bool
 		var customRangeOutput []byte
@@ -114,21 +112,4 @@ func init() {
 	productCmd.Flags().String("max", "", "Maximum version to query")
 	productCmd.Flags().String("existing-version", "", "Existing version to compare")
 	productCmd.Flags().String("future-version", "", "Future version to compare")
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.SetConfigName("config")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("./config/")
-	}
-
-	err := viper.ReadInConfig()
-
-	if err != nil {
-		log.Fatal(err)
-	}
 }
