@@ -8,9 +8,15 @@ import (
 	"eolctl/internal/logging"
 	"fmt"
 	"github.com/spf13/cobra"
+<<<<<<< Updated upstream
 	"github.com/spf13/viper"
 	"log"
 	"os"
+=======
+	// "github.com/spf13/viper"
+	// "log"
+	// "os"
+>>>>>>> Stashed changes
 	"strings"
 )
 
@@ -25,7 +31,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		initConfig()
 
 		var enableCustomRange bool
-		var customRangeOutput []byte
+		// var customRangeOutput []byte
 		var outputData []byte
 
 		name, _ := cmd.Flags().GetString("name")
@@ -69,28 +75,15 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			logger.Fatal("Custom range can't be run alongside with specific version")
 		} else if enableCustomRange {
 			logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
-			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
-
-			if customRangeOutput != nil && outputFolder != "" {
-				helpers.ExportToFile(customRangeOutput, outputFolder)
-				os.Exit(0)
-			} else if output != "" {
-				helpers.ConvertOutput(customRangeOutput, output)
-				os.Exit(0)
-			} else {
-				fmt.Print(string(customRangeOutput))
-				os.Exit(0)
-			}
+			outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
 		}
 
 		if outputFolder != "" && output == "" {
 			helpers.ExportToFile(outputData, outputFolder)
-			os.Exit(0)
 		}
 
 		if output != "" && outputFolder == "" {
 			helpers.ConvertOutput(outputData, output)
-			os.Exit(0)
 		} else {
 			fmt.Print(string(outputData))
 		}

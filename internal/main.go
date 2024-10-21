@@ -117,15 +117,15 @@ func getStringValue(value interface{}) string {
 	return "" // Return an empty string if type assertion fails
 }
 
-func ExportToFile(outputData []byte, outputFolder string) error {
+func ExportToFile(outputData []byte, exportPath string) error {
 
-	err := os.MkdirAll(outputFolder, os.ModePerm)
+	err := os.MkdirAll(exportPath, os.ModePerm)
 
 	if err != nil {
 		return fmt.Errorf("failed to create folder: %w", err)
 	}
 
-	filePath := outputFolder + "/output.json"
+	filePath := exportPath + "/output.json"
 
 	body := outputData
 
