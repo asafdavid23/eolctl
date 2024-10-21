@@ -8,7 +8,7 @@ import (
 	"eolctl/internal/logging"
 	"fmt"
 	"github.com/spf13/cobra"
-	// "github.com/spf13/viper"
+	"github.com/spf13/viper"
 	// "log"
 	"os"
 	"strings"
@@ -110,6 +110,4 @@ func init() {
 	productCmd.Flags().StringP("version", "v", "", "Version of the product")
 	productCmd.Flags().String("min", "", "Minimum version to query")
 	productCmd.Flags().String("max", "", "Maximum version to query")
-	productCmd.Flags().String("existing-version", "", "Existing version to compare")
-	productCmd.Flags().String("future-version", "", "Future version to compare")
 }
