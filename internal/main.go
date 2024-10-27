@@ -32,31 +32,10 @@ func GetAvailableProducts(output string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var products []interface{}
-	if err := json.Unmarshal(body, &products); err != nil {
-		return nil, fmt.Errorf("faild to parse JSON response: %w", err)
-	}
-
-	if output == "table" {
-		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Product"})
-
-		for _, product := range products {
-			if str, ok := product.(string); ok {
-				table.Append([]string{str})
-			}
-		}
-
-		table.Render()
-	} else if output == "json" {
-		fmt.Print(string(body))
-	}
-
 	return body, nil
 }
 
 func GetProduct(product string, version string, output string) ([]byte, error) {
-
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
 	if version != "" {
@@ -80,21 +59,7 @@ func GetProduct(product string, version string, output string) ([]byte, error) {
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 
-	var result interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("faild to parse JSON response: %w", err)
-	}
-
-	if output == "table" {
-		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-
-		row := []string{
-			result["latest"],
-		}
-	}
-
-	return nil, err
+	return body, err
 }
 
 // Helper function to check if a cycle is within a given range

@@ -4,9 +4,13 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"eolctl/internal"
 	"eolctl/internal/logging"
+	"fmt"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // availableProductsCmd represents the availableProducts command
@@ -20,10 +24,30 @@ You can filter the list to find relevant products that meet your specific needs,
 		output, _ := cmd.Flags().GetString("output")
 
 		logger := logging.NewLogger(logLevel)
-		_, err := helpers.GetAvailableProducts(output)
+		outputData, err := helpers.GetAvailableProducts(output)
 
 		if err != nil {
 			logger.Fatalf("Failed to fetch available products from the API: %v", err)
+		}
+
+		var products []interface{}
+		if err := json.Unmarshal(outputData, &products); err != nil {
+			logger.Fatalf("faild to parse JSON response: %d", err)
+		}
+
+		if output == "table" {
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"Product"})
+
+			for _, product := range products {
+				if str, ok := product.(string); ok {
+					table.Append([]string{str})
+				}
+			}
+
+			table.Render()
+		} else if output == "json" {
+			fmt.Print(string(outputData))
 		}
 
 		// helpers.ConvertOutput(outputData, output)

@@ -88,12 +88,12 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			os.Exit(0)
 		}
 
-		if output != "" && outputFolder == "" {
-			helpers.ConvertOutput(outputData, output)
-			os.Exit(0)
-		} else {
-			fmt.Print(string(outputData))
-		}
+		// if output != "" && outputFolder == "" {
+		// 	helpers.ConvertOutput(outputData, output)
+		// 	os.Exit(0)
+		// } else {
+		// 	fmt.Print(string(outputData))
+		// }
 	},
 }
 
