@@ -20,13 +20,13 @@ You can filter the list to find relevant products that meet your specific needs,
 		output, _ := cmd.Flags().GetString("output")
 
 		logger := logging.NewLogger(logLevel)
-		outputData, err := helpers.GetAvailableProducts()
+		_, err := helpers.GetAvailableProducts(output)
 
 		if err != nil {
 			logger.Fatalf("Failed to fetch available products from the API: %v", err)
 		}
 
-		helpers.ConvertOutput(outputData, output)
+		// helpers.ConvertOutput(outputData, output)
 	},
 }
 

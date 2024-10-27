@@ -40,7 +40,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 
 		if name != "" {
 			logger.Debug("Fetching available products list from the API")
-			availbleProducts, err := helpers.GetAvailableProducts()
+			availbleProducts, err := helpers.GetAvailableProducts(output)
 
 			if err != nil {
 				logger.Fatalf("Failed to fetch available products from the API: %v", err)
