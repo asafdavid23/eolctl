@@ -83,12 +83,12 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 				// Create a new map for filtered release data
 				releaseMap := map[string]string{
 					"cycle":             cycle,
-					"releaseDate":       getStringValue(release["releaseDate"]),
-					"latest":            getStringValue(release["latest"]),
-					"latestReleaseDate": getStringValue(release["latestReleaseDate"]),
-					"lts":               getStringValue(release["lts"]),
-					"eol":               getStringValue(release["eol"]),
-					"support":           getStringValue(release["support"]),
+					"releaseDate":       GetStringValue(release["releaseDate"]),
+					"latest":            GetStringValue(release["latest"]),
+					"latestReleaseDate": GetStringValue(release["latestReleaseDate"]),
+					"lts":               GetStringValue(release["lts"]),
+					"eol":               GetStringValue(release["eol"]),
+					"support":           GetStringValue(release["support"]),
 				}
 
 				filteredReleases = append(filteredReleases, releaseMap)
@@ -105,7 +105,7 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 	return filteredReleasesJSON, nil
 }
 
-func getStringValue(value interface{}) string {
+func GetStringValue(value interface{}) string {
 	if value == nil {
 		return "" // Return an empty string if the value is nil
 	}
@@ -183,13 +183,13 @@ func PrintTable(data interface{}) {
 			for _, item := range v {
 				if release, ok := item.(map[string]interface{}); ok {
 					row := []string{
-						getStringValue(release["cycle"]),
-						getStringValue(release["latest"]),
-						getStringValue(release["latestReleaseDate"]),
-						getStringValue(release["releaseDate"]),
-						getStringValue(release["lts"]),
-						getStringValue(release["eol"]),
-						getStringValue(release["support"]),
+						GetStringValue(release["cycle"]),
+						GetStringValue(release["latest"]),
+						GetStringValue(release["latestReleaseDate"]),
+						GetStringValue(release["releaseDate"]),
+						GetStringValue(release["lts"]),
+						GetStringValue(release["eol"]),
+						GetStringValue(release["support"]),
 					}
 					table.Append(row)
 				}
@@ -199,12 +199,12 @@ func PrintTable(data interface{}) {
 		table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
 		row := []string{
-			getStringValue(v["latest"]),
-			getStringValue(v["latestReleaseDate"]),
-			getStringValue(v["releaseDate"]),
-			getStringValue(v["lts"]),
-			getStringValue(v["eol"]),
-			getStringValue(v["support"]),
+			GetStringValue(v["latest"]),
+			GetStringValue(v["latestReleaseDate"]),
+			GetStringValue(v["releaseDate"]),
+			GetStringValue(v["lts"]),
+			GetStringValue(v["eol"]),
+			GetStringValue(v["support"]),
 		}
 		table.Append(row)
 	}

@@ -4,9 +4,11 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"eolctl/internal"
 	"eolctl/internal/logging"
 	"fmt"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -25,7 +27,6 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		initConfig()
 
 		var enableCustomRange bool
-		var customRangeOutput []byte
 		var outputData []byte
 
 		name, _ := cmd.Flags().GetString("name")
@@ -69,18 +70,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			logger.Fatal("Custom range can't be run alongside with specific version")
 		} else if enableCustomRange {
 			logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
-			customRangeOutput, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
-
-			if customRangeOutput != nil && outputFolder != "" {
-				helpers.ExportToFile(customRangeOutput, outputFolder)
-				os.Exit(0)
-			} else if output != "" {
-				helpers.ConvertOutput(customRangeOutput, output)
-				os.Exit(0)
-			} else {
-				fmt.Print(string(customRangeOutput))
-				os.Exit(0)
-			}
+			outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
 		}
 
 		if outputFolder != "" && output == "" {
@@ -88,12 +78,47 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			os.Exit(0)
 		}
 
-		// if output != "" && outputFolder == "" {
-		// 	helpers.ConvertOutput(outputData, output)
-		// 	os.Exit(0)
-		// } else {
-		// 	fmt.Print(string(outputData))
-		// }
+		var result interface{}
+		if err := json.Unmarshal(outputData, &result); err != nil {
+			logger.Fatalf("faild to parse JSON response: %v", err)
+		}
+
+		if output == "table" {
+			table := tablewriter.NewWriter(os.Stdout)
+			switch v := result.(type) {
+			case []interface{}:
+				table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
+				for _, item := range v {
+					if release, ok := item.(map[string]interface{}); ok {
+						row := []string{
+							helpers.GetStringValue(release["cycle"]),
+							helpers.GetStringValue(release["latest"]),
+							helpers.GetStringValue(release["latestReleaseDate"]),
+							helpers.GetStringValue(release["releaseDate"]),
+							helpers.GetStringValue(release["lts"]),
+							helpers.GetStringValue(release["eol"]),
+							helpers.GetStringValue(release["support"]),
+						}
+						table.Append(row)
+					}
+				}
+			case map[string]interface{}:
+				table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
+
+				row := []string{
+					helpers.GetStringValue(v["latest"]),
+					helpers.GetStringValue(v["latestReleaseDate"]),
+					helpers.GetStringValue(v["releaseDate"]),
+					helpers.GetStringValue(v["lts"]),
+					helpers.GetStringValue(v["eol"]),
+					helpers.GetStringValue(v["support"]),
+				}
+				table.Append(row)
+			}
+			table.Render()
+		} else if output == "json" {
+			fmt.Print(string(outputData))
+		}
 	},
 }
 
@@ -112,8 +137,6 @@ func init() {
 	productCmd.Flags().StringP("version", "v", "", "Version of the product")
 	productCmd.Flags().String("min", "", "Minimum version to query")
 	productCmd.Flags().String("max", "", "Maximum version to query")
-	productCmd.Flags().String("existing-version", "", "Existing version to compare")
-	productCmd.Flags().String("future-version", "", "Future version to compare")
 }
 
 func initConfig() {
