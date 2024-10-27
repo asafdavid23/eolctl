@@ -54,7 +54,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			shortVersion := parts[0]
 
 			logger.Debug("Fetching project product version from the API")
-			outputData, err = helpers.GetProduct(language, shortVersion)
+			outputData, err = helpers.GetProduct(language, shortVersion, output)
 
 			if err != nil {
 				logger.Fatal(err)
@@ -80,7 +80,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			shortVersion := parts[0] + "." + parts[1]
 
 			logger.Debug("Fetching project product version from the API")
-			outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion)
+			outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion, output)
 
 			if err != nil {
 				logger.Fatal(err)
