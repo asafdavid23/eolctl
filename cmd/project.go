@@ -38,7 +38,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			logger.Fatal(err)
 		}
 
-		logger.Debug("Detecting package file package.json / go.mod")
+		logger.Debug("Detecting package file")
 		packageFile, err := scanner.DetectPackgesFile(projectDir)
 
 		if err != nil {
@@ -64,14 +64,19 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 				logger.Fatal(err)
 			}
 
-			// } else if language == "Python" {
-			// 	version, err := scanner.DetectVersionFromRequirementsTxt(packageFile)
+		} else if language == "Python" {
+			version, err := scanner.DetectPythonVersion(projectDir)
 
-			// 	if err != nil {
-			// 		logger.Fatal(err)
-			// 	}
+			if err != nil {
+				logger.Fatal(err)
+			}
 
-			// 	fmt.Print(version)
+			outputData, err = helpers.GetProduct(language, version, output)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+
 		} else if language == "Go" {
 			logger.Debug("Detect version from go.mod")
 			version, err := scanner.DetectVersionFromGoMod(packageFile)
