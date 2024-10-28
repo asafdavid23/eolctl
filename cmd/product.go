@@ -118,6 +118,8 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			table.Render()
 		} else if output == "json" {
 			fmt.Print(string(outputData))
+		} else {
+			logger.Fatal("output type is not valid.")
 		}
 	},
 }

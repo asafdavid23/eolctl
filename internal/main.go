@@ -3,7 +3,6 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
 	"io"
 	"net/http"
 	"os"
@@ -143,71 +142,4 @@ func ExportToFile(outputData []byte, outputFolder string) error {
 
 	fmt.Printf("Content written to file successfully, output file located in: %s", filePath)
 	return nil
-}
-
-func ConvertOutput(outputData []byte, outputType string) error {
-	// Define a variable to hold the unmarshalled data
-	var result interface{}
-
-	// Unmarshal the JSON into the map
-	if err := json.Unmarshal(outputData, &result); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON data: %w", err)
-	}
-
-	// Switch case to handle different output types
-	switch outputType {
-	case "table":
-		PrintTable(result)
-	default:
-		return fmt.Errorf("invalid output type: %s", outputType)
-	}
-
-	return nil
-}
-
-func PrintTable(data interface{}) {
-	table := tablewriter.NewWriter(os.Stdout)
-
-	switch v := data.(type) {
-	case []interface{}:
-		if _, ok := v[0].(string); ok {
-			// Handle []string case
-			table.SetHeader([]string{"Product"})
-			for _, item := range v {
-				if str, ok := item.(string); ok {
-					table.Append([]string{str})
-				}
-			}
-		} else {
-			table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-			for _, item := range v {
-				if release, ok := item.(map[string]interface{}); ok {
-					row := []string{
-						GetStringValue(release["cycle"]),
-						GetStringValue(release["latest"]),
-						GetStringValue(release["latestReleaseDate"]),
-						GetStringValue(release["releaseDate"]),
-						GetStringValue(release["lts"]),
-						GetStringValue(release["eol"]),
-						GetStringValue(release["support"]),
-					}
-					table.Append(row)
-				}
-			}
-		}
-	case map[string]interface{}:
-		table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-
-		row := []string{
-			GetStringValue(v["latest"]),
-			GetStringValue(v["latestReleaseDate"]),
-			GetStringValue(v["releaseDate"]),
-			GetStringValue(v["lts"]),
-			GetStringValue(v["eol"]),
-			GetStringValue(v["support"]),
-		}
-		table.Append(row)
-	}
-
-	table.Render()
 }

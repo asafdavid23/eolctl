@@ -48,9 +48,9 @@ You can filter the list to find relevant products that meet your specific needs,
 			table.Render()
 		} else if output == "json" {
 			fmt.Print(string(outputData))
+		} else {
+			logger.Fatal("Output type is not valid.")
 		}
-
-		// helpers.ConvertOutput(outputData, output)
 	},
 }
 
