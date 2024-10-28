@@ -3,14 +3,13 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 )
 
-func GetAvailableProducts() ([]byte, error) {
+func GetAvailableProducts(output string) ([]byte, error) {
 	url := "https://endoflife.date/api/all.json" // Update this with the correct URL
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -32,12 +31,10 @@ func GetAvailableProducts() ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// Return the body and nil error (if no error occurred)
 	return body, nil
 }
 
-func GetProduct(product string, version string) ([]byte, error) {
-
+func GetProduct(product string, version string, output string) ([]byte, error) {
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
 	if version != "" {
@@ -85,12 +82,12 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 				// Create a new map for filtered release data
 				releaseMap := map[string]string{
 					"cycle":             cycle,
-					"releaseDate":       getStringValue(release["releaseDate"]),
-					"latest":            getStringValue(release["latest"]),
-					"latestReleaseDate": getStringValue(release["latestReleaseDate"]),
-					"lts":               getStringValue(release["lts"]),
-					"eol":               getStringValue(release["eol"]),
-					"support":           getStringValue(release["support"]),
+					"releaseDate":       GetStringValue(release["releaseDate"]),
+					"latest":            GetStringValue(release["latest"]),
+					"latestReleaseDate": GetStringValue(release["latestReleaseDate"]),
+					"lts":               GetStringValue(release["lts"]),
+					"eol":               GetStringValue(release["eol"]),
+					"support":           GetStringValue(release["support"]),
 				}
 
 				filteredReleases = append(filteredReleases, releaseMap)
@@ -107,7 +104,7 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 	return filteredReleasesJSON, nil
 }
 
-func getStringValue(value interface{}) string {
+func GetStringValue(value interface{}) string {
 	if value == nil {
 		return "" // Return an empty string if the value is nil
 	}
@@ -145,71 +142,4 @@ func ExportToFile(outputData []byte, outputFolder string) error {
 
 	fmt.Printf("Content written to file successfully, output file located in: %s", filePath)
 	return nil
-}
-
-func ConvertOutput(outputData []byte, outputType string) error {
-	// Define a variable to hold the unmarshalled data
-	var result interface{}
-
-	// Unmarshal the JSON into the map
-	if err := json.Unmarshal(outputData, &result); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON data: %w", err)
-	}
-
-	// Switch case to handle different output types
-	switch outputType {
-	case "table":
-		PrintTable(result)
-	default:
-		return fmt.Errorf("invalid output type: %s", outputType)
-	}
-
-	return nil
-}
-
-func PrintTable(data interface{}) {
-	table := tablewriter.NewWriter(os.Stdout)
-
-	switch v := data.(type) {
-	case []interface{}:
-		if _, ok := v[0].(string); ok {
-			// Handle []string case
-			table.SetHeader([]string{"Product"})
-			for _, item := range v {
-				if str, ok := item.(string); ok {
-					table.Append([]string{str})
-				}
-			}
-		} else {
-			table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-			for _, item := range v {
-				if release, ok := item.(map[string]interface{}); ok {
-					row := []string{
-						getStringValue(release["cycle"]),
-						getStringValue(release["latest"]),
-						getStringValue(release["latestReleaseDate"]),
-						getStringValue(release["releaseDate"]),
-						getStringValue(release["lts"]),
-						getStringValue(release["eol"]),
-						getStringValue(release["support"]),
-					}
-					table.Append(row)
-				}
-			}
-		}
-	case map[string]interface{}:
-		table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-
-		row := []string{
-			getStringValue(v["latest"]),
-			getStringValue(v["latestReleaseDate"]),
-			getStringValue(v["releaseDate"]),
-			getStringValue(v["lts"]),
-			getStringValue(v["eol"]),
-			getStringValue(v["support"]),
-		}
-		table.Append(row)
-	}
-
-	table.Render()
 }

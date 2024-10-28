@@ -4,10 +4,14 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"eolctl/internal"
 	"eolctl/internal/logging"
 	"eolctl/internal/scanner"
+	"fmt"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"os"
 	"strings"
 )
 
@@ -54,7 +58,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			shortVersion := parts[0]
 
 			logger.Debug("Fetching project product version from the API")
-			outputData, err = helpers.GetProduct(language, shortVersion)
+			outputData, err = helpers.GetProduct(language, shortVersion, output)
 
 			if err != nil {
 				logger.Fatal(err)
@@ -80,17 +84,37 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			shortVersion := parts[0] + "." + parts[1]
 
 			logger.Debug("Fetching project product version from the API")
-			outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion)
+			outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion, output)
 
 			if err != nil {
 				logger.Fatal(err)
 			}
 		}
 
-		if output != "" {
-			helpers.ConvertOutput(outputData, output)
+		var result map[string]interface{}
+		if err := json.Unmarshal(outputData, &result); err != nil {
+			logger.Fatalf("faild to parse JSON response: %v", err)
 		}
 
+		if output == "table" {
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
+
+			row := []string{
+				helpers.GetStringValue(result["latest"]),
+				helpers.GetStringValue(result["latestReleaseDate"]),
+				helpers.GetStringValue(result["releaseDate"]),
+				helpers.GetStringValue(result["lts"]),
+				helpers.GetStringValue(result["eol"]),
+				helpers.GetStringValue(result["support"]),
+			}
+			table.Append(row)
+			table.Render()
+		} else if output == "json" {
+			fmt.Print(string(outputData))
+		} else {
+			logger.Fatal("output type is not valid.")
+		}
 	},
 }
 
