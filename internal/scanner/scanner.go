@@ -12,10 +12,12 @@ import (
 	"strings"
 )
 
-var languageMap = map[string]string{
-	".go": "Go",
-	".js": "JavaScript",
-	".py": "Python",
+var languageExtensions = map[string][]string{
+	"Go":         {".go"},
+	"Python":     {".py"},
+	"Java":       {".java"},
+	"JavaScript": {".js"},
+	"TypeScript": {".ts"},
 }
 
 // For reading from package.json
@@ -25,48 +27,104 @@ type PackageJSON struct {
 	} `json:"engines"`
 }
 
-// DetectLanguage scans the directory and identifies the programming language based on file extensions.
-func DetectLanguage(projectDir string) (string, error) {
-	languageCount := make(map[string]int)
+// // DetectLanguage scans the directory and identifies the programming language based on file extensions.
+// func DetectLanguage(projectDir string) (string, error) {
+// 	languageCount := make(map[string]int)
 
-	err := filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
+// 	err := filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
+// 		if err != nil {
+// 			return err
+// 		}
+// 		// Check if it's a regular file (not a directory)
+// 		if !info.IsDir() {
+// 			ext := filepath.Ext(path)
+// 			if lang, ok := languageMap[ext]; ok {
+// 				languageCount[lang]++
+// 			}
+// 		}
+// 		return nil
+// 	})
+
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	// Find the most frequent language
+// 	var detectedLang string
+// 	var maxCount int
+// 	for lang, count := range languageCount {
+// 		if count > maxCount {
+// 			maxCount = count
+// 			detectedLang = lang
+// 		}
+// 	}
+
+// 	if detectedLang == "" {
+// 		return "Unknown", nil
+// 	}
+// 	return detectedLang, nil
+// }
+
+func DetectLanguage(fileName string) string {
+	ext := strings.ToLower(filepath.Ext(fileName))
+
+	for lang, extensions := range languageExtensions {
+		for _, e := range extensions {
+			if e == ext {
+				return lang
+			}
+		}
+	}
+
+	return ""
+}
+
+func ScanRepo(repoDir string) ([]string, error) {
+	var projectDirs []string
+
+	// Walk through each file in the directory.
+	err := filepath.Walk(repoDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		// Check if it's a regular file (not a directory)
-		if !info.IsDir() {
-			ext := filepath.Ext(path)
-			if lang, ok := languageMap[ext]; ok {
-				languageCount[lang]++
+
+		// Check if the current directory has any indicators of a Python or Go project.
+		if info.IsDir() {
+			hasGoFiles := false
+			hasPythonFiles := false
+
+			// Read through files in the current directory
+			files, err := os.ReadDir(path)
+			if err != nil {
+				return err
+			}
+
+			for _, file := range files {
+				// Check for files typical to Python and Go projects.
+				if file.Name() == "main.go" || file.Name() == "go.mod" {
+					hasGoFiles = true
+				}
+				if file.Name() == "main.py" || file.Name() == "requirements.txt" || file.Name() == "setup.py" {
+					hasPythonFiles = true
+				}
+			}
+
+			// If any indicators of a project are found, add the directory path to projectDirs.
+			if hasGoFiles || hasPythonFiles { // Append a single trailing backslash for Windows format
+				projectDirs = append(projectDirs, path)
 			}
 		}
 		return nil
 	})
 
-	if err != nil {
-		return "", err
-	}
-
-	// Find the most frequent language
-	var detectedLang string
-	var maxCount int
-	for lang, count := range languageCount {
-		if count > maxCount {
-			maxCount = count
-			detectedLang = lang
-		}
-	}
-
-	if detectedLang == "" {
-		return "Unknown", nil
-	}
-	return detectedLang, nil
+	return projectDirs, err
 }
 
 func DetectPackgesFile(projectDir string) (string, error) {
 	var packagesFile string
 
-	err := filepath.WalkDir(projectDir, func(path string, d os.DirEntry, err error) error {
+	trimmedPath := strings.TrimSuffix(projectDir, "\\")
+	err := filepath.WalkDir(trimmedPath, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

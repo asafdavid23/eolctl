@@ -5,14 +5,15 @@ package cmd
 
 import (
 	"encoding/json"
-	"eolctl/internal"
+	helpers "eolctl/internal"
 	"eolctl/internal/logging"
 	"eolctl/internal/scanner"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/cobra"
 )
 
 // projectCmd represents the project command
@@ -31,94 +32,106 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 		output, _ := cmd.Flags().GetString("output")
 
 		logger.Debug("Detecting project programming language")
-		language, err := scanner.DetectLanguage(projectDir)
-		logger.Debugf("Project language is %s: ", language)
+		// language, err := scanner.DetectLanguage(projectDir)
+		// logger.Debugf("Project language is %s: ", language)
+
+		// if err != nil {
+		// 	logger.Fatal(err)
+		// }
+
+		languages, err := scanner.ScanRepo(projectDir)
+
+		logger.Debugf("Project languages is %v", languages)
 
 		if err != nil {
 			logger.Fatal(err)
 		}
 
 		logger.Debug("Detecting package file")
-		packageFile, err := scanner.DetectPackgesFile(projectDir)
 
-		if err != nil {
-			logger.Fatal(err)
-		}
-
-		if language == "JavaScript" {
-			logger.Debug("Detect version from pacakge.json")
-			version, err := scanner.DetectVersionFromPackageJSON(packageFile)
+		for _, language := range languages {
+			logger.Debugf(language)
+			packageFile, err := scanner.DetectPackgesFile(language)
 
 			if err != nil {
 				logger.Fatal(err)
 			}
 
-			language = "nodejs"
-			parts := strings.Split(version, ".")
-			shortVersion := parts[0]
+			if language == "JavaScript" {
+				logger.Debug("Detect version from pacakge.json")
+				version, err := scanner.DetectVersionFromPackageJSON(packageFile)
 
-			logger.Debug("Fetching project product version from the API")
-			outputData, err = helpers.GetProduct(language, shortVersion, output)
+				if err != nil {
+					logger.Fatal(err)
+				}
 
-			if err != nil {
-				logger.Fatal(err)
+				language = "nodejs"
+				parts := strings.Split(version, ".")
+				shortVersion := parts[0]
+
+				logger.Debug("Fetching project product version from the API")
+				outputData, err = helpers.GetProduct(language, shortVersion, output)
+
+				if err != nil {
+					logger.Fatal(err)
+				}
+
+			} else if language == "Python" {
+				version, err := scanner.DetectPythonVersion(projectDir)
+
+				if err != nil {
+					logger.Fatal(err)
+				}
+
+				outputData, err = helpers.GetProduct(language, version, output)
+
+				if err != nil {
+					logger.Fatal(err)
+				}
+
+			} else if language == "Go" {
+				logger.Debug("Detect version from go.mod")
+				version, err := scanner.DetectVersionFromGoMod(packageFile)
+
+				if err != nil {
+					logger.Fatal(err)
+				}
+
+				parts := strings.Split(version, ".")
+				shortVersion := parts[0] + "." + parts[1]
+
+				logger.Debug("Fetching project product version from the API")
+				outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion, output)
+
+				if err != nil {
+					logger.Fatal(err)
+				}
 			}
 
-		} else if language == "Python" {
-			version, err := scanner.DetectPythonVersion(projectDir)
-
-			if err != nil {
-				logger.Fatal(err)
+			var result map[string]interface{}
+			if err := json.Unmarshal(outputData, &result); err != nil {
+				logger.Fatalf("faild to parse JSON response: %v", err)
 			}
 
-			outputData, err = helpers.GetProduct(language, version, output)
+			if output == "table" {
+				table := tablewriter.NewWriter(os.Stdout)
+				table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
-			if err != nil {
-				logger.Fatal(err)
+				row := []string{
+					helpers.GetStringValue(result["latest"]),
+					helpers.GetStringValue(result["latestReleaseDate"]),
+					helpers.GetStringValue(result["releaseDate"]),
+					helpers.GetStringValue(result["lts"]),
+					helpers.GetStringValue(result["eol"]),
+					helpers.GetStringValue(result["support"]),
+				}
+				table.Append(row)
+				table.Render()
+			} else if output == "json" {
+				fmt.Print(string(outputData))
+			} else {
+				logger.Fatal("output type is not valid.")
 			}
-
-		} else if language == "Go" {
-			logger.Debug("Detect version from go.mod")
-			version, err := scanner.DetectVersionFromGoMod(packageFile)
-
-			if err != nil {
-				logger.Fatal(err)
-			}
-
-			parts := strings.Split(version, ".")
-			shortVersion := parts[0] + "." + parts[1]
-
-			logger.Debug("Fetching project product version from the API")
-			outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion, output)
-
-			if err != nil {
-				logger.Fatal(err)
-			}
-		}
-
-		var result map[string]interface{}
-		if err := json.Unmarshal(outputData, &result); err != nil {
-			logger.Fatalf("faild to parse JSON response: %v", err)
-		}
-
-		if output == "table" {
-			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-
-			row := []string{
-				helpers.GetStringValue(result["latest"]),
-				helpers.GetStringValue(result["latestReleaseDate"]),
-				helpers.GetStringValue(result["releaseDate"]),
-				helpers.GetStringValue(result["lts"]),
-				helpers.GetStringValue(result["eol"]),
-				helpers.GetStringValue(result["support"]),
-			}
-			table.Append(row)
-			table.Render()
-		} else if output == "json" {
-			fmt.Print(string(outputData))
-		} else {
-			logger.Fatal("output type is not valid.")
 		}
 	},
 }
