@@ -24,22 +24,21 @@ var projectCmd = &cobra.Command{
 It then retrieves End-of-Life (EOL) information for the identified product, providing you with up-to-date status and version details.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var outputData []byte
+		var result map[string]interface{}
 
 		projectDir := args[0]
 		logLevel, _ := cmd.Flags().GetString("log-level")
 
 		logger := logging.NewLogger(logLevel)
 		output, _ := cmd.Flags().GetString("output")
+		recurse, _ := cmd.Flags().GetBool("recursive")
+
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"Product", "Path", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
 		logger.Debug("Detecting project programming language")
-		// language, err := scanner.DetectLanguage(projectDir)
-		// logger.Debugf("Project language is %s: ", language)
 
-		// if err != nil {
-		// 	logger.Fatal(err)
-		// }
-
-		languages, err := scanner.ScanRepo(projectDir)
+		languages, err := scanner.IdentifyLanguages(projectDir, recurse)
 
 		logger.Debugf("Project languages is %v", languages)
 
@@ -47,91 +46,103 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			logger.Fatal(err)
 		}
 
-		logger.Debug("Detecting package file")
+		if len(languages) > 0 {
+			for path, lang := range languages {
+				logger.Debugf(path)
 
-		for _, language := range languages {
-			logger.Debugf(language)
-			packageFile, err := scanner.DetectPackgesFile(language)
+				if lang == "JavaScript" {
+					logger.Debug("Detect version from pacakge.json")
+					version, err := scanner.IdentifyNodeVersion(path)
 
-			if err != nil {
-				logger.Fatal(err)
+					if err != nil {
+						logger.Fatal(err)
+					}
+
+					language := "nodejs"
+					parts := strings.Split(version, ".")
+					shortVersion := parts[0]
+
+					logger.Debug("Fetching project product version from the API")
+					outputData, err = helpers.GetProduct(language, shortVersion, output)
+
+					if err != nil {
+						logger.Fatal(err)
+					}
+
+				} else if lang == "Python" {
+					version, err := scanner.IdentifyPythonVersion(path)
+
+					if err != nil {
+						logger.Fatal(err)
+					}
+
+					outputData, err = helpers.GetProduct(lang, version, output)
+
+					if err != nil {
+						logger.Fatal(err)
+					}
+
+					if err := json.Unmarshal(outputData, &result); err != nil {
+						logger.Fatalf("faild to parse JSON response: %v", err)
+					}
+
+					row := []string{
+						lang,
+						path,
+						helpers.GetStringValue(result["latest"]),
+						helpers.GetStringValue(result["latestReleaseDate"]),
+						helpers.GetStringValue(result["releaseDate"]),
+						helpers.GetStringValue(result["lts"]),
+						helpers.GetStringValue(result["eol"]),
+						helpers.GetStringValue(result["support"]),
+					}
+
+					table.Append(row)
+
+				} else if lang == "Go" {
+					logger.Debug("Detect version from go.mod")
+					version, err := scanner.IdentifyGoVersion(path)
+
+					if err != nil {
+						logger.Fatal(err)
+					}
+
+					parts := strings.Split(version, ".")
+					shortVersion := parts[0] + "." + parts[1]
+
+					logger.Debug("Fetching project product version from the API")
+					outputData, err = helpers.GetProduct(strings.ToLower(lang), shortVersion, output)
+
+					if err != nil {
+						logger.Fatalf("can't fetch data from the API: %v", err)
+					}
+
+					if err := json.Unmarshal(outputData, &result); err != nil {
+						logger.Fatalf("faild to parse JSON response: %v", err)
+					}
+
+					row := []string{
+						lang,
+						path,
+						helpers.GetStringValue(result["latest"]),
+						helpers.GetStringValue(result["latestReleaseDate"]),
+						helpers.GetStringValue(result["releaseDate"]),
+						helpers.GetStringValue(result["lts"]),
+						helpers.GetStringValue(result["eol"]),
+						helpers.GetStringValue(result["support"]),
+					}
+
+					table.Append(row)
+				}
 			}
+		}
 
-			if language == "JavaScript" {
-				logger.Debug("Detect version from pacakge.json")
-				version, err := scanner.DetectVersionFromPackageJSON(packageFile)
-
-				if err != nil {
-					logger.Fatal(err)
-				}
-
-				language = "nodejs"
-				parts := strings.Split(version, ".")
-				shortVersion := parts[0]
-
-				logger.Debug("Fetching project product version from the API")
-				outputData, err = helpers.GetProduct(language, shortVersion, output)
-
-				if err != nil {
-					logger.Fatal(err)
-				}
-
-			} else if language == "Python" {
-				version, err := scanner.DetectPythonVersion(projectDir)
-
-				if err != nil {
-					logger.Fatal(err)
-				}
-
-				outputData, err = helpers.GetProduct(language, version, output)
-
-				if err != nil {
-					logger.Fatal(err)
-				}
-
-			} else if language == "Go" {
-				logger.Debug("Detect version from go.mod")
-				version, err := scanner.DetectVersionFromGoMod(packageFile)
-
-				if err != nil {
-					logger.Fatal(err)
-				}
-
-				parts := strings.Split(version, ".")
-				shortVersion := parts[0] + "." + parts[1]
-
-				logger.Debug("Fetching project product version from the API")
-				outputData, err = helpers.GetProduct(strings.ToLower(language), shortVersion, output)
-
-				if err != nil {
-					logger.Fatal(err)
-				}
-			}
-
-			var result map[string]interface{}
-			if err := json.Unmarshal(outputData, &result); err != nil {
-				logger.Fatalf("faild to parse JSON response: %v", err)
-			}
-
-			if output == "table" {
-				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-
-				row := []string{
-					helpers.GetStringValue(result["latest"]),
-					helpers.GetStringValue(result["latestReleaseDate"]),
-					helpers.GetStringValue(result["releaseDate"]),
-					helpers.GetStringValue(result["lts"]),
-					helpers.GetStringValue(result["eol"]),
-					helpers.GetStringValue(result["support"]),
-				}
-				table.Append(row)
-				table.Render()
-			} else if output == "json" {
-				fmt.Print(string(outputData))
-			} else {
-				logger.Fatal("output type is not valid.")
-			}
+		if output == "table" {
+			table.Render()
+		} else if output == "json" {
+			fmt.Print(string(outputData))
+		} else {
+			logger.Fatal("output type is not valid.")
 		}
 	},
 }
@@ -147,5 +158,5 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// projectCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	projectCmd.Flags().BoolP("recursive", "r", false, "Enable recursive scan")
 }

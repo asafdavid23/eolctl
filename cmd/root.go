@@ -5,13 +5,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var cfgFile string
 
-var version = "v1.0.2"
+var version string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -24,9 +25,9 @@ Additionally, the tool offers an easily accessible API for data retrieval and su
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
+		versionFlag, _ := cmd.Flags().GetBool("version")
+		if versionFlag {
 			fmt.Println("eolctl version:", version)
-			os.Exit(0)
 		}
 	},
 }
