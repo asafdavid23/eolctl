@@ -5,13 +5,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var cfgFile string
 
-var version = "v1.0.2"
+var version = "dev"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -47,7 +48,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.eolctl.yaml)")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Display the version of this CLI tool")
-	rootCmd.PersistentFlags().StringP("output", "o", "", "Output type table/json/yaml")
+	rootCmd.PersistentFlags().StringP("output", "o", "table", "Output type table/json/yaml")
 	rootCmd.PersistentFlags().String("output-path", "", "Export to file")
 	rootCmd.PersistentFlags().String("log-level", "", "Set log level")
 
