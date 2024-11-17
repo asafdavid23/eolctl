@@ -32,7 +32,7 @@ jobs:
       - name: Build
         run: |
           mkdir -p output
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-X 'eolctl/cmd.version=v1.2.3'" -o output/eolctl-${{ matrix.goos }}-${{ matrix.goarch }} .
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-X 'eolctl/cmd.version=${{ github.event.inputs.version }}'" -o output/eolctl-${{ matrix.goos }}-${{ matrix.goarch }} .
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
