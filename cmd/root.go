@@ -12,7 +12,7 @@ import (
 
 var cfgFile string
 
-var version = "dev"
+var Version = "dev"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -26,7 +26,7 @@ Additionally, the tool offers an easily accessible API for data retrieval and su
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
-			fmt.Println("eolctl version:", version)
+			fmt.Println("eolctl version:", Version)
 			os.Exit(0)
 		}
 	},

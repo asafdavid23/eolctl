@@ -5,14 +5,15 @@ package cmd
 
 import (
 	"encoding/json"
-	"eolctl/internal"
+	helpers "eolctl/internal"
 	"eolctl/internal/logging"
 	"eolctl/internal/scanner"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/cobra"
 )
 
 // projectCmd represents the project command
@@ -23,9 +24,11 @@ var projectCmd = &cobra.Command{
 It then retrieves End-of-Life (EOL) information for the identified product, providing you with up-to-date status and version details.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var outputData []byte
+		var version string
 
 		projectDir := args[0]
 		logLevel, _ := cmd.Flags().GetString("log-level")
+		suggestVersion, _ := cmd.Flags().GetBool("suggest-version")
 
 		logger := logging.NewLogger(logLevel)
 		output, _ := cmd.Flags().GetString("output")
@@ -65,7 +68,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 			}
 
 		} else if language == "Python" {
-			version, err := scanner.DetectPythonVersion(projectDir)
+			version, err = scanner.DetectPythonVersion(projectDir)
 
 			if err != nil {
 				logger.Fatal(err)
@@ -79,7 +82,7 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 
 		} else if language == "Go" {
 			logger.Debug("Detect version from go.mod")
-			version, err := scanner.DetectVersionFromGoMod(packageFile)
+			version, err = scanner.DetectVersionFromGoMod(packageFile)
 
 			if err != nil {
 				logger.Fatal(err)
@@ -130,8 +133,7 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// projectCmd.PersistentFlags().String("foo", "", "A help for foo")
-
+	projectCmd.Flags().Bool("suggest-version", false, "Suggest a version upgrade based on the current project version")
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// projectCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
