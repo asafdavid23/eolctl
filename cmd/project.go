@@ -28,7 +28,6 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 
 		projectDir := args[0]
 		logLevel, _ := cmd.Flags().GetString("log-level")
-		suggestVersion, _ := cmd.Flags().GetBool("suggest-version")
 
 		logger := logging.NewLogger(logLevel)
 		output, _ := cmd.Flags().GetString("output")
