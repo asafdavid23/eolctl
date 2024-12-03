@@ -105,9 +105,10 @@ It then retrieves End-of-Life (EOL) information for the identified product, prov
 
 		if output == "table" {
 			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
+			table.SetHeader([]string{"Version", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
 			row := []string{
+				version,
 				helpers.GetStringValue(result["latest"]),
 				helpers.GetStringValue(result["latestReleaseDate"]),
 				helpers.GetStringValue(result["releaseDate"]),
