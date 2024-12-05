@@ -122,7 +122,7 @@ func ExportToFile(outputData []byte, outputFolder string) error {
 		return fmt.Errorf("failed to create folder: %w", err)
 	}
 
-	filePath := outputFolder + "/output.json"
+	filePath := outputFolder + "output.json"
 
 	body := outputData
 

@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // getCmd represents the get command
@@ -25,8 +26,11 @@ func init() {
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// getCmd.PersistentFlags().String("foo", "", "A help for foo")
+	getCmd.PersistentFlags().String("output-path", "", "Export to file")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	viper.BindPFlag("output.path", getCmd.Flags().Lookup("output-path"))
 }
