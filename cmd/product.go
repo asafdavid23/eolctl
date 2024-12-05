@@ -5,15 +5,15 @@ package cmd
 
 import (
 	"encoding/json"
-	"eolctl/internal"
+	helpers "eolctl/internal"
 	"eolctl/internal/logging"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
-	"os"
-	"strings"
 )
 
 // productCmd represents the product command
@@ -31,7 +31,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 
 		name, _ := cmd.Flags().GetString("name")
 		version, _ := cmd.Flags().GetString("version")
-		outputFolder, _ := cmd.Flags().GetString("output-path")
+		outputFolder := viper.GetString("output.path")
 		minVersion, _ := cmd.Flags().GetString("min")
 		maxVersion, _ := cmd.Flags().GetString("max")
 		output, _ := cmd.Flags().GetString("output")
@@ -73,9 +73,8 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
 		}
 
-		if outputFolder != "" && output == "" {
+		if outputFolder != "" {
 			helpers.ExportToFile(outputData, outputFolder)
-			os.Exit(0)
 		}
 
 		var result interface{}
@@ -139,21 +138,4 @@ func init() {
 	productCmd.Flags().StringP("version", "v", "", "Version of the product")
 	productCmd.Flags().String("min", "", "Minimum version to query")
 	productCmd.Flags().String("max", "", "Maximum version to query")
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.SetConfigName("config")
-		viper.SetConfigType("yaml")
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("./config/")
-	}
-
-	err := viper.ReadInConfig()
-
-	if err != nil {
-		log.Fatal(err)
-	}
 }

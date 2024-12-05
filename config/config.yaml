@@ -1,2 +1,2 @@
-app:
-  outputFolder: /tmp/
+output:
+  path: /tmp/
