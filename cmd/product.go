@@ -56,7 +56,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		}
 
 		logger.Debug("Fetching product data from the API")
-		outputData, err := helpers.GetProduct(name, version, output)
+		outputData, err := helpers.GetProduct(name, version)
 
 		if err != nil {
 			logger.Fatalf("Failed to fetch data for proudct %s\n\n", name)
