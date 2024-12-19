@@ -3,9 +3,7 @@ package scanner
 import (
 	// "fmt"
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,21 +11,16 @@ import (
 )
 
 var languageMap = map[string]string{
-	".go": "Go",
-	".js": "JavaScript",
-	".py": "Python",
-}
-
-// For reading from package.json
-type PackageJSON struct {
-	Engines struct {
-		Node string `json:"node"`
-	} `json:"engines"`
+	".go": "go",
+	".js": "nodejs",
+	".py": "python",
+	".tf": "terraform",
 }
 
 // DetectLanguage scans the directory and identifies the programming language based on file extensions.
-func DetectLanguage(projectDir string) (string, error) {
+func DetectLanguages(projectDir string) ([]string, []string, error) {
 	languageCount := make(map[string]int)
+	projectDirs := make(map[string]struct{})
 
 	err := filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -38,150 +31,160 @@ func DetectLanguage(projectDir string) (string, error) {
 			ext := filepath.Ext(path)
 			if lang, ok := languageMap[ext]; ok {
 				languageCount[lang]++
+
+				dir := filepath.Dir(path)
+				projectDirs[dir] = struct{}{}
+			}
+
+			// Additional check for project-defining files
+			projectIndicators := []string{"package.json", "requirements.txt", "go.mod", "pom.xml"}
+			if contains(projectIndicators, info.Name()) {
+				dir := filepath.Dir(path)
+				projectDirs[dir] = struct{}{}
 			}
 		}
 		return nil
 	})
 
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
 
 	// Find the most frequent language
-	var detectedLang string
-	var maxCount int
-	for lang, count := range languageCount {
-		if count > maxCount {
-			maxCount = count
-			detectedLang = lang
-		}
+	var detectedLanguages []string
+	var detectedProjects []string
+
+	for dir := range projectDirs {
+		detectedProjects = append(detectedProjects, dir)
 	}
 
-	if detectedLang == "" {
-		return "Unknown", nil
+	for lang := range languageCount {
+		detectedLanguages = append(detectedLanguages, lang)
 	}
-	return detectedLang, nil
+
+	if len(detectedLanguages) == 0 {
+		return []string{"Unknown"}, detectedProjects, nil
+	}
+
+	return detectedLanguages, detectedProjects, nil
 }
 
-func DetectPackgesFile(projectDir string) (string, error) {
-	var packagesFile string
+// Helper function to check if a slice contains a string
+func contains(slice []string, item string) bool {
+	for _, elem := range slice {
+		if elem == item {
+			return true
+		}
+	}
+	return false
+}
 
-	err := filepath.WalkDir(projectDir, func(path string, d os.DirEntry, err error) error {
+func DetectVersion(projectDir string) (string, error) {
+	var detectedVersion string
+	// Iterate through all files and subdirectories
+	err := filepath.Walk(projectDir, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() {
-			if filepath.Base(path) == "package.json" || filepath.Base(path) == "go.mod" || filepath.Base(path) == "setup.py" || filepath.Base(path) == "pyproject.toml" || filepath.Base(path) == "Pipfile" {
-				packagesFile = path
-				return filepath.SkipDir // Stop once we've found the first package.json or go.mod
-			}
 
+		// Skip directories, only process files
+		if info.IsDir() {
+			return nil
+		}
+
+		// Define file patterns to check (you can extend this)
+		filesToCheck := map[string]*regexp.Regexp{
+			// "package.json":   regexp.MustCompile(`"node":\s*"([0-9\.]+)`),
+			"Pipfile":        regexp.MustCompile(`python_version\s*=\s*['"]([0-9\.]+)['"]`),
+			"pyproject.toml": regexp.MustCompile(`python\s*=\s*['"]([0-9\.]+)['"]`),
+			"go.mod":         regexp.MustCompile(`go\s([0-9\.]+)`),
+			"setup.py":       regexp.MustCompile(`python_requires\s*=\s*['"]([0-9\.]+)['"]`),
+		}
+
+		// Get the file name and decide how to process based on the file type
+		for file, regex := range filesToCheck {
+			if strings.HasSuffix(filePath, file) {
+				f, err := os.Open(filePath)
+				if err != nil {
+					fmt.Printf("Could not open %s: %v\n", filePath, err)
+					return nil
+				}
+				defer f.Close()
+
+				// // Special handling for package.json (Node.js)
+				// if file == "package.json" {
+				// 	var jsonContent map[string]interface{}
+				// 	if err := json.NewDecoder(f).Decode(&jsonContent); err != nil {
+				// 		fmt.Printf("Failed to parse JSON in %s: %v\n", filePath, err)
+				// 		return nil
+				// 	}
+
+				// 	// Look for the "engines.node" field
+				// 	if engines, ok := jsonContent["engines"].(map[string]interface{}); ok {
+				// 		if nodeVersion, ok := engines["node"].(string); ok {
+				// 			if matches := regex.FindStringSubmatch(nodeVersion); matches != nil {
+				// 				detectedVersion = matches[1]
+				// 				return nil
+				// 			}
+				// 		}
+				// 	}
+				// 	continue
+				// }
+
+				scanner := bufio.NewScanner(f)
+				inRelevantSection := false // Tracks relevant sections for Pipfile and pyproject.toml
+				for scanner.Scan() {
+					line := strings.TrimSpace(scanner.Text())
+
+					// Handle specific section requirements for Pipfile and pyproject.toml
+					if file == "Pipfile" {
+						if strings.HasPrefix(line, "[requires]") {
+							inRelevantSection = true
+							continue
+						} else if strings.HasPrefix(line, "[") { // End of [requires] section in Pipfile
+							inRelevantSection = false
+						}
+					} else if file == "pyproject.toml" {
+						// Look for relevant sections in pyproject.toml: [project] or [tool.poetry]
+						if strings.HasPrefix(line, "[project]") || strings.HasPrefix(line, "[tool.poetry]") {
+							inRelevantSection = true
+							continue
+						} else if strings.HasPrefix(line, "[") { // End of relevant sections in pyproject.toml
+							inRelevantSection = false
+						}
+					}
+
+					// Match Go version in go.mod
+					if file == "go.mod" {
+						if matches := regex.FindStringSubmatch(line); matches != nil {
+							detectedVersion = matches[1]
+							return nil
+						}
+					}
+
+					// Match Python version in Python-related files
+					if inRelevantSection || file == "setup.py" {
+						if matches := regex.FindStringSubmatch(line); matches != nil {
+							detectedVersion = matches[1]
+							return nil // Return the version requirement found
+						}
+					}
+				}
+
+				// If no match was found in the current file, show a debug message
+				fmt.Printf("No version requirement found in %s\n", filePath)
+			}
 		}
 		return nil
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("error walking the directory: %v", err)
+		return "", fmt.Errorf("error walking the path %v: %v", projectDir, err)
 	}
 
-	if packagesFile == "" {
-		return "", fmt.Errorf("package file not found")
+	if detectedVersion == "" {
+		return "", fmt.Errorf("version requirement not found in any checked files")
 	}
 
-	return packagesFile, nil
-}
-
-// DetectVersionFromPackageJSON reads the version from package.json
-func DetectVersionFromPackageJSON(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	byteValue, _ := io.ReadAll(file)
-	var pkg PackageJSON
-	err = json.Unmarshal(byteValue, &pkg)
-	if err != nil {
-		return "", err
-	}
-
-	if pkg.Engines.Node != "" {
-		return pkg.Engines.Node, nil
-	}
-	return "Unknown", nil
-}
-
-// DetectVersionFromRequirementsTxt reads versions from requirements.txt
-func DetectPythonVersion(path string) (string, error) {
-	// Define the files and regex patterns for each file
-	filesToCheck := map[string]*regexp.Regexp{
-		"setup.py":       regexp.MustCompile(`(?i)python_requires\s*=\s*['"][><=~]*\s*([\d\.]+)['"]`),
-		"pyproject.toml": regexp.MustCompile(`(?i)requires-python\s*=\s*['"][><=~]*\s*([\d\.]+)['"]`),
-		"Pipfile":        regexp.MustCompile(`(?i)python_version\s*=\s*['"][><=~]*\s*([\d\.]+)['"]`),
-	}
-
-	for file, regex := range filesToCheck {
-		f, err := os.Open(path + "/" + file)
-		if err != nil {
-			fmt.Printf("Could not open %s: %v\n", file, err) // Debug: show file open errors
-			continue                                         // skip if file does not exist
-		}
-		defer f.Close()
-
-		scanner := bufio.NewScanner(f)
-		inRelevantSection := false // Tracks relevant sections for Pipfile and pyproject.toml
-
-		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
-
-			// Handle specific section requirements for Pipfile and pyproject.toml
-			if file == "Pipfile" {
-				if strings.HasPrefix(line, "[requires]") {
-					inRelevantSection = true
-					continue
-				} else if strings.HasPrefix(line, "[") { // End of [requires] section in Pipfile
-					inRelevantSection = false
-				}
-			} else if file == "pyproject.toml" {
-				// Look for relevant sections in pyproject.toml: [project] or [tool.poetry]
-				if strings.HasPrefix(line, "[project]") || strings.HasPrefix(line, "[tool.poetry]") {
-					inRelevantSection = true
-					continue
-				} else if strings.HasPrefix(line, "[") { // End of relevant sections in pyproject.toml
-					inRelevantSection = false
-				}
-			}
-
-			// Only search for version if in the relevant section (for Pipfile and pyproject.toml)
-			if inRelevantSection || file == "setup.py" {
-				if matches := regex.FindStringSubmatch(line); matches != nil {
-					return matches[1], nil // Return the version requirement found
-				}
-			}
-		}
-
-		// If no match was found in the current file, show a debug message
-		fmt.Printf("No Python version requirement found in %s\n", file)
-	}
-
-	return "", fmt.Errorf("Python version requirement not found in any checked files")
-}
-
-// DetectVersionFromGoMod reads the Go version from go.mod
-func DetectVersionFromGoMod(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "go ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "go ")), nil
-		}
-	}
-	return "Unknown", nil
+	return detectedVersion, nil
 }

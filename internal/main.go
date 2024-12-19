@@ -34,7 +34,7 @@ func GetAvailableProducts(output string) ([]byte, error) {
 	return body, nil
 }
 
-func GetProduct(product string, version string, output string) ([]byte, error) {
+func GetProduct(product string, version string) ([]byte, error) {
 	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
 
 	if version != "" {
