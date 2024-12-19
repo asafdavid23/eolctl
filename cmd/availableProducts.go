@@ -5,12 +5,15 @@ package cmd
 
 import (
 	"encoding/json"
-	"eolctl/internal"
+	helpers "eolctl/internal"
+	localCache "eolctl/internal/cache"
 	"eolctl/internal/logging"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/olekukonko/tablewriter"
+	"github.com/patrickmn/go-cache"
+	"github.com/spf13/cobra"
 )
 
 // availableProductsCmd represents the availableProducts command
@@ -20,19 +23,57 @@ var availableProductsCmd = &cobra.Command{
 	Long: `The 'available-products' command retrieves and displays a list of all products currently supported by the API. 
 You can filter the list to find relevant products that meet your specific needs, allowing you to quickly identify which products are available for interaction with the API.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var outputData []byte
+		var err error
+		var products []json.RawMessage
+
 		logLevel, _ := cmd.Flags().GetString("log-level")
 		output, _ := cmd.Flags().GetString("output")
 
 		logger := logging.NewLogger(logLevel)
-		outputData, err := helpers.GetAvailableProducts(output)
 
-		if err != nil {
-			logger.Fatalf("Failed to fetch available products from the API: %v", err)
-		}
+		c := localCache.InitializeCacheFile()
 
-		var products []interface{}
-		if err := json.Unmarshal(outputData, &products); err != nil {
-			logger.Fatalf("faild to parse JSON response: %d", err)
+		cacheKey := "available-products"
+
+		if cacheData, found := c.Get(cacheKey); found {
+			logger.Info("Cache hit for available products")
+			logger.Debugf("Type of cacheData: %T", cacheData)
+
+			// Assert cacheData to cache.Item
+			cacheItem, ok := cacheData.(cache.Item)
+			if !ok {
+				logger.Fatalf("Failed to assert cache data to cache.Item")
+			}
+
+			// Access the data within cache.Item
+			cacheDataBytes, ok := cacheItem.Object.([]byte)
+			if !ok {
+				logger.Fatalf("Failed to assert cache item object to []byte")
+			}
+
+			// Parse API response into products slice
+			if err := json.Unmarshal(cacheDataBytes, &products); err != nil {
+				logger.Fatalf("Failed to parse JSON response: %v", err)
+			}
+
+		} else {
+			logger.Info("Cache miss for avaiable products")
+			logger.Info("Fetching available products from the API")
+			outputData, err = helpers.GetAvailableProducts(output)
+
+			if err != nil {
+				logger.Fatalf("Failed to fetch available products from the API: %v", err)
+			}
+
+			// Parse API response into products slice
+			if err := json.Unmarshal(outputData, &products); err != nil {
+				logger.Fatalf("Failed to parse JSON response: %v", err)
+			}
+
+			logger.Debug("Caching available products")
+			c.Set(cacheKey, outputData, cache.DefaultExpiration)
+			localCache.SaveCacheFile()
 		}
 
 		if output == "table" {
@@ -40,9 +81,8 @@ You can filter the list to find relevant products that meet your specific needs,
 			table.SetHeader([]string{"Product"})
 
 			for _, product := range products {
-				if str, ok := product.(string); ok {
-					table.Append([]string{str})
-				}
+				productStr := string(product)
+				table.Append([]string{productStr})
 			}
 
 			table.Render()
