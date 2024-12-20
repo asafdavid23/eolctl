@@ -20,10 +20,12 @@ var (
 	cacheDir   = filepath.Dir(cacheFile)
 )
 
-func InitializeCacheFile() *cache.Cache {
+func InitializeCacheFile() (*cache.Cache, error) {
+	var initErr error
+
 	once.Do(func() {
 		if err := os.MkdirAll(cacheDir, 0755); err != nil {
-			fmt.Printf("Failed to create cache directory: %v\n", err)
+			initErr = fmt.Errorf("failed to create cache directory: %w", err)
 			return
 		}
 
@@ -31,25 +33,29 @@ func InitializeCacheFile() *cache.Cache {
 			file, err := os.Create(cacheFile)
 
 			if err != nil {
-				fmt.Println("Failed to create cache file")
+				initErr = fmt.Errorf("failed to create cache file: %w", err)
 				return
 			}
 			defer file.Close()
 
 			if _, err := file.Write([]byte("{}")); err != nil {
-				fmt.Printf("Failed to initialize cache file content: %v\n", err)
+				initErr = fmt.Errorf("failed to write to cache file: %w", err)
 				return
 			}
 		}
 
 		if err := LoadCacheFile(); err != nil {
-			fmt.Printf("Failed to load cache file: %v\n", err)
+			initErr = fmt.Errorf("failed to load cache file: %w", err)
 			c = cache.New(5*time.Minute, 10*time.Minute)
 			return
 		}
 	})
 
-	return c
+	if initErr != nil {
+		return nil, initErr
+	}
+
+	return c, nil
 }
 
 func LoadCacheFile() error {
@@ -74,7 +80,6 @@ func LoadCacheFile() error {
 		c.Set(key, item, time.Duration(item.Expiration))
 	}
 
-	fmt.Println("Cache successfully loaded from cache file")
 	return nil
 }
 

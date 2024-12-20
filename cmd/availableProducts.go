@@ -32,7 +32,11 @@ You can filter the list to find relevant products that meet your specific needs,
 
 		logger := logging.NewLogger(logLevel)
 
-		c := localCache.InitializeCacheFile()
+		c, err := localCache.InitializeCacheFile()
+
+		if err != nil {
+			logger.Fatalf("Failed to initialize cache file: %v", err)
+		}
 
 		cacheKey := "available-products"
 
@@ -77,17 +81,36 @@ You can filter the list to find relevant products that meet your specific needs,
 		}
 
 		if output == "table" {
-			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Product"})
+			var data []string
 
 			for _, product := range products {
-				productStr := string(product)
-				table.Append([]string{productStr})
+				var productData string
+
+				if err := json.Unmarshal(product, &productData); err != nil {
+					logger.Fatalf("Failed to parse product data: %v", err)
+				}
+				data = append(data, productData)
+			}
+
+			headers := []string{"Product"}
+
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader(headers)
+
+			for _, row := range data {
+				rowData := []string{row}
+				table.Append(rowData)
 			}
 
 			table.Render()
 		} else if output == "json" {
-			fmt.Print(string(outputData))
+			productsJSON, err := json.Marshal(products)
+
+			if err != nil {
+				logger.Fatalf("Failed to marshal products to JSON: %v", err)
+			}
+
+			fmt.Print(string(productsJSON))
 		} else {
 			logger.Fatal("Output type is not valid.")
 		}
