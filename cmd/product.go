@@ -6,12 +6,14 @@ package cmd
 import (
 	"encoding/json"
 	helpers "eolctl/internal"
+	localCache "eolctl/internal/cache"
 	"eolctl/internal/logging"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/patrickmn/go-cache"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -28,6 +30,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 
 		var enableCustomRange bool
 		var outputData []byte
+		var result interface{}
 
 		name, _ := cmd.Flags().GetString("name")
 		version, _ := cmd.Flags().GetString("version")
@@ -55,70 +58,172 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			logger.Fatal("Product name is required.")
 		}
 
-		logger.Debug("Fetching product data from the API")
-		outputData, err := helpers.GetProduct(name, version)
-
-		if err != nil {
-			logger.Fatalf("Failed to fetch data for proudct %s\n\n", name)
-		}
-
 		if minVersion != "" && maxVersion != "" {
 			enableCustomRange = true
 		}
 
 		if enableCustomRange && version != "" {
 			logger.Fatal("Custom range can't be run alongside with specific version")
-		} else if enableCustomRange {
-			logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
-			outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
 		}
 
-		if outputFolder != "" {
-			helpers.ExportToFile(outputData, outputFolder)
+		c, err := localCache.InitializeCacheFile()
+
+		if err != nil {
+			logger.Fatalf("Failed to initialize cache file: %v", err)
 		}
 
-		var result interface{}
-		if err := json.Unmarshal(outputData, &result); err != nil {
-			logger.Fatalf("faild to parse JSON response: %v", err)
+		if name != "" && version == "" {
+			productCacheKey := fmt.Sprintf("product-%s", name)
+			if cacheData, found := c.Get(productCacheKey); found {
+				logger.Info("Cache hit for product")
+				logger.Debugf("Type of cacheData: %T", cacheData)
+
+				// Assert cacheData to cache.Item
+				cacheItem, ok := cacheData.(cache.Item)
+				if !ok {
+					logger.Fatalf("Failed to assert cache data to cache.Item")
+				}
+
+				// Access the data within cache.Item
+				cacheDataBytes, ok := cacheItem.Object.([]byte)
+				if !ok {
+					logger.Fatalf("Failed to assert cache item object to []byte")
+				}
+
+				if err := json.Unmarshal(cacheDataBytes, &outputData); err != nil {
+					logger.Fatalf("Failed to parse JSON response: %v", err)
+				}
+			} else {
+				logger.Info("Cache miss for product")
+				logger.Info("Fetching product data from the API")
+
+				if enableCustomRange {
+					logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
+					outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
+				} else {
+					outputData, err = helpers.GetProduct(name, version)
+				}
+
+				if err != nil {
+					logger.Fatalf("Failed to fetch data for proudct %s\n\n", name)
+				}
+
+				if err := json.Unmarshal(outputData, &result); err != nil {
+					logger.Fatalf("Failed to parse JSON response: %v", err)
+				}
+
+				logger.Debug("Caching product")
+				c.Set(productCacheKey, outputData, cache.DefaultExpiration)
+				localCache.SaveCacheFile()
+			}
+		} else if name != "" && version != "" {
+			productCycleCacheKey := fmt.Sprintf("product-%s-%s", name, version)
+
+			if cacheData, found := c.Get(productCycleCacheKey); found {
+				logger.Info("Cache hit for product cycle")
+				logger.Debugf("Type of cacheData: %T", cacheData)
+
+				// Assert cacheData to cache.Item
+				cacheItem, ok := cacheData.(cache.Item)
+				if !ok {
+					logger.Fatalf("Failed to assert cache data to cache.Item")
+				}
+
+				// Access the data within cache.Item
+				cacheDataBytes, ok := cacheItem.Object.([]byte)
+				if !ok {
+					logger.Fatalf("Failed to assert cache item object to []byte")
+				}
+
+				if err := json.Unmarshal(cacheDataBytes, &result); err != nil {
+					logger.Fatalf("Failed to parse JSON response: %v", err)
+				}
+			} else {
+				logger.Info("Cache miss for product cycle")
+				logger.Info("Fetching product cycle data from the API")
+
+				outputData, err = helpers.GetProduct(name, version)
+
+				if err != nil {
+					logger.Fatalf("Failed to fetch data for proudct %s\n\n", name)
+				}
+
+				if err := json.Unmarshal(outputData, &result); err != nil {
+					logger.Fatalf("Failed to parse JSON response: %v", err)
+				}
+
+				logger.Debug("Caching product cycle")
+				c.Set(productCycleCacheKey, outputData, cache.DefaultExpiration)
+				localCache.SaveCacheFile()
+			}
 		}
 
 		if output == "table" {
+			var headers []string
 			table := tablewriter.NewWriter(os.Stdout)
+
 			switch v := result.(type) {
 			case []interface{}:
-				table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
+
+				if len(v) > 0 {
+					// Get headers from the first item
+					if firstItem, ok := v[0].(map[string]interface{}); ok {
+
+						for key := range firstItem {
+							headers = append(headers, key)
+						}
+
+						table.SetHeader(headers)
+					}
+				}
+
 				for _, item := range v {
-					if release, ok := item.(map[string]interface{}); ok {
-						row := []string{
-							helpers.GetStringValue(release["cycle"]),
-							helpers.GetStringValue(release["latest"]),
-							helpers.GetStringValue(release["latestReleaseDate"]),
-							helpers.GetStringValue(release["releaseDate"]),
-							helpers.GetStringValue(release["lts"]),
-							helpers.GetStringValue(release["eol"]),
-							helpers.GetStringValue(release["support"]),
+					if record, ok := item.(map[string]interface{}); ok {
+						row := []string{}
+
+						for _, key := range headers {
+							row = append(row, helpers.GetStringValue(record[key]))
 						}
 						table.Append(row)
 					}
 				}
-			case map[string]interface{}:
-				table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
 
-				row := []string{
-					helpers.GetStringValue(v["latest"]),
-					helpers.GetStringValue(v["latestReleaseDate"]),
-					helpers.GetStringValue(v["releaseDate"]),
-					helpers.GetStringValue(v["lts"]),
-					helpers.GetStringValue(v["eol"]),
-					helpers.GetStringValue(v["support"]),
+				table.Render()
+			case map[string]interface{}:
+				// Handle single object
+				headers := []string{}
+				row := []string{}
+
+				for key, value := range v {
+					headers = append(headers, key)
+					row = append(row, helpers.GetStringValue(value))
 				}
+
+				table.SetHeader(headers)
 				table.Append(row)
+				table.Render()
 			}
-			table.Render()
+
 		} else if output == "json" {
-			fmt.Print(string(outputData))
+			productsJSON, err := json.Marshal(result)
+
+			if err != nil {
+				logger.Fatalf("Failed to marshal products to JSON: %v", err)
+			}
+
+			fmt.Print(string(productsJSON))
 		} else {
 			logger.Fatal("output type is not valid.")
+		}
+
+		if outputFolder != "" {
+			productsJSON, err := json.Marshal(result)
+
+			if err != nil {
+				logger.Fatalf("Failed to marshal products to JSON: %v", err)
+			}
+
+			helpers.ExportToFile(productsJSON, outputFolder)
 		}
 	},
 }
