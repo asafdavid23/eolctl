@@ -5,8 +5,8 @@ package cmd
 
 import (
 	"encoding/json"
-	helpers "eolctl/internal"
 	"eolctl/internal/logging"
+	helpers "eolctl/pkg/helpers"
 	"fmt"
 	"os"
 	"strings"
