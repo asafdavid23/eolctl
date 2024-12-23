@@ -7,7 +7,21 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
+
+type EOL struct {
+	Value interface{} `json:"eol"`
+}
+
+type ApiResponse struct {
+	Cycle             string `json:"cycle"`
+	ReleaseDate       string `json:"releaseDate"`
+	EOL               EOL    `json:"eol"`
+	Latest            string `json:"latest"`
+	LatestReleaseDate string `json:"latestReleaseDate"`
+	LTS               bool   `json:"lts"`
+}
 
 func GetAvailableProducts(output string) ([]byte, error) {
 	url := "https://endoflife.date/api/all.json" // Update this with the correct URL
@@ -142,4 +156,64 @@ func ExportToFile(outputData []byte, outputFolder string) error {
 
 	fmt.Printf("Content written to file successfully, output file located in: %s", filePath)
 	return nil
+}
+
+func (e *EOL) UnmarshalJSON(data []byte) error {
+	var boolVal bool
+	if err := json.Unmarshal(data, &boolVal); err == nil {
+		e.Value = boolVal
+		return nil
+	}
+
+	var stringVal string
+	if err := json.Unmarshal(data, &stringVal); err == nil {
+		e.Value = stringVal
+		return nil
+	}
+
+	return fmt.Errorf("invalid EOL value: %s", string(data))
+}
+
+func CheckProductEOL(product string, version string) (bool, string, error) {
+	var response ApiResponse
+
+	productData, err := GetProduct(product, version)
+
+	if err != nil {
+		return false, "", fmt.Errorf("failed to fetch product data: %w", err)
+	}
+
+	// parse the product data into the response struct
+	if err := json.Unmarshal(productData, &response); err != nil {
+		return false, "", fmt.Errorf("failed to unmarshal JSON data: %w", err)
+	}
+
+	// parse the date
+	var eolDate time.Time
+	switch value := response.EOL.Value.(type) {
+	case string:
+		var err error
+		eolDate, err = time.Parse("2006-01-02", value)
+
+		if err != nil {
+			return false, "", fmt.Errorf("failed to parse EOL date: %w", err)
+		}
+	case bool:
+		if value {
+			return true, fmt.Sprintf("Product %s version %s is EOL", product, version), nil
+		}
+	}
+
+	if err != nil {
+		return false, "", fmt.Errorf("failed to parse EOL date: %w", err)
+	}
+
+	// Check if the current date is after the EOL date
+	currentDate := time.Now()
+
+	if currentDate.After(eolDate) {
+		return true, fmt.Sprintf("Product %s version %s is EOL", product, version), nil
+	}
+
+	return false, fmt.Sprintf("Product %s version %s is not EOL", product, version), nil
 }
