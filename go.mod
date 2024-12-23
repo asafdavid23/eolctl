@@ -1,4 +1,4 @@
-module eolctl
+module github.com/asafdavid23/eolctl
 
 go 1.23.2
 
