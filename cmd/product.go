@@ -5,11 +5,12 @@ package cmd
 
 import (
 	"encoding/json"
-	"eolctl/internal/logging"
-	helpers "eolctl/pkg/helpers"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/asafdavid23/eolctl/internal/logging"
+	helpers "github.com/asafdavid23/eolctl/pkg/helpers"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"

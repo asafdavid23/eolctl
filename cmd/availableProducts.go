@@ -5,11 +5,13 @@ package cmd
 
 import (
 	"encoding/json"
-	localCache "eolctl/internal/cache"
-	"eolctl/internal/logging"
-	helpers "eolctl/pkg/helpers"
 	"fmt"
 	"os"
+
+	"github.com/asafdavid23/eolctl/internal/logging"
+
+	localCache "github.com/asafdavid23/eolctl/internal/cache"
+	helpers "github.com/asafdavid23/eolctl/pkg/helpers"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/patrickmn/go-cache"
