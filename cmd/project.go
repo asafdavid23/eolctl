@@ -5,9 +5,9 @@ package cmd
 
 import (
 	"encoding/json"
-	helpers "eolctl/internal"
 	"eolctl/internal/logging"
 	"eolctl/internal/scanner"
+	helpers "eolctl/pkg/helpers"
 	"fmt"
 	"os"
 
