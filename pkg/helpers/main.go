@@ -200,7 +200,7 @@ func CheckProductEOL(product string, version string) (bool, string, error) {
 		}
 	case bool:
 		if value {
-			return true, fmt.Sprintf("Product %s version %s is EOL", product, version), nil
+			return true, fmt.Sprintf("Product %s version %s is EOL: %t", product, version, response.EOL.Value), nil
 		}
 	}
 
