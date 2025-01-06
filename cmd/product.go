@@ -97,12 +97,12 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 				logger.Info("Cache miss for product")
 				logger.Info("Fetching product data from the API")
 
-				if enableCustomRange {
-					logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
-					outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
-				} else {
-					outputData, err = helpers.GetProduct(name, version)
-				}
+				// if enableCustomRange {
+				// 	logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
+				// 	outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
+				// }
+
+				outputData, err = helpers.GetProduct(name, version)
 
 				if err != nil {
 					logger.Fatalf("Failed to fetch data for proudct %s\n\n", name)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -38,7 +39,10 @@ func InitializeCacheFile() (*cache.Cache, error) {
 			}
 			defer file.Close()
 
-			if _, err := file.Write([]byte("{}")); err != nil {
+			// Write an empty map as the initial state
+			emptyCache := map[string]cache.Item{}
+			enc := gob.NewEncoder(file)
+			if err := enc.Encode(emptyCache); err != nil {
 				initErr = fmt.Errorf("failed to write to cache file: %w", err)
 				return
 			}
@@ -65,12 +69,20 @@ func LoadCacheFile() error {
 		return fmt.Errorf("failed to read cache file: %w", err)
 	}
 
+	if len(data) == 0 {
+		fmt.Println("Cache file is empty")
+		return nil
+	}
+
 	buf := bytes.NewReader(data)
 	dec := gob.NewDecoder(buf)
 
 	var items map[string]cache.Item
 
 	if err := dec.Decode(&items); err != nil {
+		if err == io.EOF {
+			return nil // EOF is expected if the file is empty or incomplete
+		}
 		return fmt.Errorf("failed to decode cache file: %w", err)
 	}
 
