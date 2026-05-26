@@ -106,7 +106,7 @@ func DetectVersion(projectDir string) (string, error) {
 			if strings.HasSuffix(filePath, file) {
 				f, err := os.Open(filePath)
 				if err != nil {
-					fmt.Printf("Could not open %s: %v\n", filePath, err)
+					fmt.Fprintf(os.Stderr, "could not open %s: %v\n", filePath, err)
 					return nil
 				}
 				defer f.Close()
@@ -172,7 +172,7 @@ func DetectVersion(projectDir string) (string, error) {
 				}
 
 				// If no match was found in the current file, show a debug message
-				fmt.Printf("No version requirement found in %s\n", filePath)
+				fmt.Fprintf(os.Stderr, "no version requirement found in %s\n", filePath)
 			}
 		}
 		return nil

@@ -38,8 +38,9 @@ func InitializeCacheFile() (*cache.Cache, error) {
 			}
 			defer file.Close()
 
-			if _, err := file.Write([]byte("{}")); err != nil {
-				initErr = fmt.Errorf("failed to write to cache file: %w", err)
+			enc := gob.NewEncoder(file)
+			if err := enc.Encode(map[string]cache.Item{}); err != nil {
+				initErr = fmt.Errorf("failed to initialize cache file: %w", err)
 				return
 			}
 		}
@@ -77,7 +78,16 @@ func LoadCacheFile() error {
 	c = cache.New(5*time.Minute, 10*time.Minute)
 
 	for key, item := range items {
-		c.Set(key, item, time.Duration(item.Expiration))
+		var ttl time.Duration
+		if item.Expiration > 0 {
+			ttl = time.Until(time.Unix(0, item.Expiration))
+			if ttl <= 0 {
+				continue // item already expired
+			}
+		} else {
+			ttl = cache.NoExpiration
+		}
+		c.Set(key, item.Object, ttl)
 	}
 
 	return nil

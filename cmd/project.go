@@ -19,9 +19,9 @@ import (
 )
 
 type ProjectInfo struct {
-	Product string `json:"langugage"`
+	Product string `json:"language"`
 	Version string `json:"version"`
-	Eol     string `string:"eol"`
+	Eol     string `json:"eol"`
 }
 
 // projectCmd represents the project command
@@ -65,13 +65,13 @@ var projectCmd = &cobra.Command{
 			var result map[string]interface{}
 			productData, err := helpers.GetProduct(language, version)
 
-			if err := json.Unmarshal(productData, &result); err != nil {
-				logger.Fatalf("faild to parse JSON response: %v", err)
+			if err != nil {
+				logger.Errorf("failed to get product info for language %s and version %s: %v", language, version, err)
+				continue
 			}
 
-			if err != nil {
-				logger.Errorf("failed to get proudct info for language %s and version %s: %v", language, version, err)
-				continue
+			if err := json.Unmarshal(productData, &result); err != nil {
+				logger.Fatalf("failed to parse JSON response: %v", err)
 			}
 
 			product := string(productData)

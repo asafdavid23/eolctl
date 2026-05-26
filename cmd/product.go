@@ -42,14 +42,14 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 
 		if name != "" {
 			logger.Debug("Fetching available products list from the API")
-			availbleProducts, err := helpers.GetAvailableProducts(output)
+			availableProducts, err := helpers.GetAvailableProducts(output)
 
 			if err != nil {
 				logger.Fatalf("Failed to fetch available products from the API: %v", err)
 			}
 
 			logger.Debug("Verifying product does exist on the API")
-			if !strings.Contains(string(availbleProducts), name) {
+			if !strings.Contains(string(availableProducts), name) {
 				logger.Fatalf("%s doesn't exists on the API", name)
 			}
 		} else {
@@ -60,7 +60,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 		outputData, err := helpers.GetProduct(name, version)
 
 		if err != nil {
-			logger.Fatalf("Failed to fetch data for proudct %s\n\n", name)
+			logger.Fatalf("Failed to fetch data for product %s: %v", name, err)
 		}
 
 		if minVersion != "" && maxVersion != "" {
@@ -71,7 +71,11 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			logger.Fatal("Custom range can't be run alongside with specific version")
 		} else if enableCustomRange {
 			logger.Debug("Custom range mode is enabled, fetching data from the API for product version from min to max")
-			outputData, _ = helpers.FilterVersions(outputData, minVersion, maxVersion)
+			filtered, err := helpers.FilterVersions(outputData, minVersion, maxVersion)
+			if err != nil {
+				logger.Fatalf("Failed to filter versions: %v", err)
+			}
+			outputData = filtered
 		}
 
 		if outputFolder != "" {
@@ -80,7 +84,7 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 
 		var result interface{}
 		if err := json.Unmarshal(outputData, &result); err != nil {
-			logger.Fatalf("faild to parse JSON response: %v", err)
+			logger.Fatalf("failed to parse JSON response: %v", err)
 		}
 
 		if output == "table" {

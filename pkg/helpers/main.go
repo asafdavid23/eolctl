@@ -6,9 +6,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
+
+var httpClient = &http.Client{Timeout: 15 * time.Second}
 
 type EOL struct {
 	Value interface{} `json:"eol"`
@@ -33,12 +36,15 @@ func GetAvailableProducts(output string) ([]byte, error) {
 
 	req.Header.Add("Accept", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute HTTP request: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API returned non-200 status: %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -63,13 +69,18 @@ func GetProduct(product string, version string) ([]byte, error) {
 
 	req.Header.Add("Accept", "application/json")
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := httpClient.Do(req)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch data from the API: %w", err)
 	}
 
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API returned non-200 status: %d", res.StatusCode)
+	}
+
 	body, err := io.ReadAll(res.Body)
 
 	return body, err
@@ -112,7 +123,7 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 	filteredReleasesJSON, err := json.Marshal(filteredReleases)
 
 	if err != nil {
-
+		return nil, fmt.Errorf("failed to marshal filtered releases: %w", err)
 	}
 
 	return filteredReleasesJSON, nil
@@ -136,7 +147,7 @@ func ExportToFile(outputData []byte, outputFolder string) error {
 		return fmt.Errorf("failed to create folder: %w", err)
 	}
 
-	filePath := outputFolder + "output.json"
+	filePath := filepath.Join(outputFolder, "output.json")
 
 	body := outputData
 
