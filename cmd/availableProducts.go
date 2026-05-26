@@ -44,18 +44,10 @@ You can filter the list to find relevant products that meet your specific needs,
 
 		if cacheData, found := c.Get(cacheKey); found {
 			logger.Info("Cache hit for available products")
-			logger.Debugf("Type of cacheData: %T", cacheData)
 
-			// Assert cacheData to cache.Item
-			cacheItem, ok := cacheData.(cache.Item)
+			cacheDataBytes, ok := cacheData.([]byte)
 			if !ok {
-				logger.Fatalf("Failed to assert cache data to cache.Item")
-			}
-
-			// Access the data within cache.Item
-			cacheDataBytes, ok := cacheItem.Object.([]byte)
-			if !ok {
-				logger.Fatalf("Failed to assert cache item object to []byte")
+				logger.Fatalf("Failed to assert cache data to []byte")
 			}
 
 			// Parse API response into products slice
@@ -64,7 +56,7 @@ You can filter the list to find relevant products that meet your specific needs,
 			}
 
 		} else {
-			logger.Info("Cache miss for avaiable products")
+			logger.Info("Cache miss for available products")
 			logger.Info("Fetching available products from the API")
 			outputData, err = helpers.GetAvailableProducts(output)
 
