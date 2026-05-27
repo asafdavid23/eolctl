@@ -84,12 +84,11 @@ func DetectStack(projectDir string) ([]StackInfo, error) {
 	for _, block := range resp.Content {
 		if b, ok := block.AsAny().(anthropic.TextBlock); ok {
 			text := strings.TrimSpace(b.Text)
-			// Strip markdown code fences if present (e.g. ```json ... ```)
-			if strings.HasPrefix(text, "```") {
-				text = strings.TrimPrefix(text, "```json")
-				text = strings.TrimPrefix(text, "```")
-				text = strings.TrimSuffix(text, "```")
-				text = strings.TrimSpace(text)
+			// Extract the JSON array, ignoring any surrounding markdown or text
+			if start := strings.IndexByte(text, '['); start != -1 {
+				if end := strings.LastIndexByte(text, ']'); end > start {
+					text = text[start : end+1]
+				}
 			}
 			var result []StackInfo
 			if err := json.Unmarshal([]byte(text), &result); err != nil {

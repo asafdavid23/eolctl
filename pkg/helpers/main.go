@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -55,13 +57,13 @@ func GetAvailableProducts(output string) ([]byte, error) {
 }
 
 func GetProduct(product string, version string) ([]byte, error) {
-	url := fmt.Sprintf("https://endoflife.date/api/%s.json", product)
+	endpoint := fmt.Sprintf("https://endoflife.date/api/%s.json", url.PathEscape(product))
 
 	if version != "" {
-		url = fmt.Sprintf("https://endoflife.date/api/%s/%s.json", product, version)
+		endpoint = fmt.Sprintf("https://endoflife.date/api/%s/%s.json", url.PathEscape(product), url.PathEscape(version))
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", endpoint, nil)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
@@ -86,9 +88,35 @@ func GetProduct(product string, version string) ([]byte, error) {
 	return body, err
 }
 
-// Helper function to check if a cycle is within a given range
+func compareVersions(a, b string) int {
+	aParts := strings.Split(a, ".")
+	bParts := strings.Split(b, ".")
+
+	maxLen := len(aParts)
+	if len(bParts) > maxLen {
+		maxLen = len(bParts)
+	}
+
+	for i := 0; i < maxLen; i++ {
+		var aNum, bNum int
+		if i < len(aParts) {
+			aNum, _ = strconv.Atoi(aParts[i])
+		}
+		if i < len(bParts) {
+			bNum, _ = strconv.Atoi(bParts[i])
+		}
+		if aNum != bNum {
+			if aNum > bNum {
+				return 1
+			}
+			return -1
+		}
+	}
+	return 0
+}
+
 func IsWithinRange(cycle, minVersion, maxVersion string) bool {
-	return strings.Compare(cycle, minVersion) >= 0 && strings.Compare(cycle, maxVersion) <= 0
+	return compareVersions(cycle, minVersion) >= 0 && compareVersions(cycle, maxVersion) <= 0
 }
 
 func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, error) {
@@ -131,12 +159,18 @@ func FilterVersions(outputData []byte, minVersion, maxVersion string) ([]byte, e
 
 func GetStringValue(value interface{}) string {
 	if value == nil {
-		return "" // Return an empty string if the value is nil
+		return ""
 	}
-	if str, ok := value.(string); ok {
-		return str // Return the string value
+	switch v := value.(type) {
+	case string:
+		return v
+	case bool:
+		if v {
+			return "true"
+		}
+		return "false"
 	}
-	return "" // Return an empty string if type assertion fails
+	return ""
 }
 
 func ExportToFile(outputData []byte, outputFolder string) error {
@@ -211,12 +245,9 @@ func CheckProductEOL(product string, version string) (bool, string, error) {
 		}
 	case bool:
 		if value {
-			return true, fmt.Sprintf("Product %s version %s is EOL: %t", product, version, response.EOL.Value), nil
+			return true, fmt.Sprintf("Product %s version %s is EOL", product, version), nil
 		}
-	}
-
-	if err != nil {
-		return false, "", fmt.Errorf("failed to parse EOL date: %w", err)
+		return false, fmt.Sprintf("Product %s version %s is not EOL", product, version), nil
 	}
 
 	// Check if the current date is after the EOL date

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/asafdavid23/eolctl/internal/logging"
 	helpers "github.com/asafdavid23/eolctl/pkg/helpers"
@@ -49,8 +48,19 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			}
 
 			logger.Debug("Verifying product does exist on the API")
-			if !strings.Contains(string(availableProducts), name) {
-				logger.Fatalf("%s doesn't exists on the API", name)
+			var products []string
+			if err := json.Unmarshal(availableProducts, &products); err != nil {
+				logger.Fatalf("failed to parse available products list: %v", err)
+			}
+			found := false
+			for _, p := range products {
+				if p == name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				logger.Fatalf("%s doesn't exist on the API", name)
 			}
 		} else {
 			logger.Fatal("Product name is required.")

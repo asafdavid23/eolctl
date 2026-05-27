@@ -29,18 +29,14 @@ type ProjectInfo struct {
 var projectCmd = &cobra.Command{
 	Use:   "project",
 	Short: "Identify and retrieve EOL information for a project based on its codebase.",
-	Long: `The 'project' command analyzes the codebase in a specified project directory to identify the product and its version. 
+	Long: `The 'project' command analyzes the codebase in a specified project directory to identify the product and its version.
 	It then retrieves End-of-Life (EOL) information for the identified product, providing you with up-to-date status and version details.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		projectDir := args[0]
 		logLevel, _ := cmd.Flags().GetString("log-level")
-
 		logger := logging.NewLogger(logLevel)
 		output, _ := cmd.Flags().GetString("output")
-
-		if len(projectDir) < 1 {
-			logger.Fatal("please specify project dir")
-		}
 
 		logger.Debug("Detecting project programming language")
 		stacks, err := ai.DetectStack(projectDir)
