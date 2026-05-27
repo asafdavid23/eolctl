@@ -121,6 +121,32 @@ var projectCmd = &cobra.Command{
 				}
 			}
 		}
+
+		suggestVersion, _ := cmd.Flags().GetBool("suggest-version")
+
+		if suggestVersion {
+			var upgradeItems []ai.UpgradeItem
+			for _, item := range results {
+				upgradeItems = append(upgradeItems, ai.UpgradeItem{
+					Language:  item.Product,
+					Version:   item.Version,
+					EOL:       item.Eol,
+					RiskLevel: item.Risk,
+				})
+			}
+
+			if len(upgradeItems) == 0 {
+				logger.Warn("no upgrade data available — no components were successfully scanned")
+			} else {
+				suggestions, err := ai.SuggestUpgradePath(upgradeItems)
+				if err != nil {
+					logger.Errorf("failed to generate upgrade suggestions: %v", err)
+				} else {
+					fmt.Println("\n--- AI Upgrade Suggestions ---")
+					fmt.Println(suggestions)
+				}
+			}
+		}
 	},
 }
 
