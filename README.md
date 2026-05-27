@@ -11,6 +11,7 @@
 - Monorepo support — detects multiple languages (e.g. Go backend + Node.js frontend) in a single scan.
 - Risk scoring — classifies each component as CRITICAL / HIGH / MEDIUM / LOW based on days until EOL.
 - AI risk narrative — generates a concise, prioritized risk summary using Claude.
+- AI upgrade suggestions — recommends specific versions to upgrade to for each EOL component.
 - Custom version range filtering.
 - Export results to JSON file.
 
@@ -121,6 +122,28 @@ Your Node.js 18 dependency reached end-of-life on April 30, 2025 and should be
 upgraded to Node.js 20 or 22 immediately to avoid security exposure. Go 1.22
 will reach EOL in August 2025, leaving a narrow window for an upgrade to 1.23
 before support ends. Prioritise the Node.js upgrade given its critical status.
+```
+
+### AI upgrade suggestions
+
+Add `--suggest-version` to get specific, actionable upgrade recommendations for each component:
+
+```bash
+eolctl scan project ./monorepo --output table --suggest-version
+```
+
+```
+--- AI Upgrade Suggestions ---
+For Go 1.22 (EOL: 2025-08-01, MEDIUM risk): upgrade to Go 1.23, which is the
+current stable release and supported until mid-2026. For Node.js 20 (EOL:
+2026-04-30, LOW risk): consider planning a migration to Node.js 22 (LTS) ahead
+of the EOL date to avoid a future critical-risk window.
+```
+
+Both flags can be combined in a single run:
+
+```bash
+eolctl scan project ./monorepo --output table --risk-report --suggest-version
 ```
 
 ## Risk levels
