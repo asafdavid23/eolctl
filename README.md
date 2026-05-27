@@ -9,6 +9,8 @@
 - Check the EOL status of various programming languages and frameworks.
 - AI-powered project scanning — automatically detects language and version from your codebase using Claude.
 - Monorepo support — detects multiple languages (e.g. Go backend + Node.js frontend) in a single scan.
+- **Kubernetes cluster scanning** — lists all Helm releases across namespaces and checks each chart's app version for EOL status.
+- **ArtifactHub fallback** — for charts not tracked by endoflife.date, falls back to ArtifactHub to derive risk from version staleness and deprecation status.
 - Risk scoring — classifies each component as CRITICAL / HIGH / MEDIUM / LOW based on days until EOL.
 - AI risk narrative — generates a concise, prioritized risk summary using Claude.
 - AI upgrade suggestions — recommends specific versions to upgrade to for each EOL component.
@@ -17,10 +19,20 @@
 
 ## Prerequisites
 
-The `scan project` command and the `--risk-report` flag require an Anthropic API key:
+The `scan project` and `scan cluster` commands, as well as the `--risk-report` and `--suggest-version` flags, require an Anthropic API key:
 
 ```bash
 export ANTHROPIC_API_KEY=your_api_key_here
+```
+
+The `scan cluster` command additionally requires:
+
+- [Helm](https://helm.sh/docs/intro/install/) v3+ installed and available on your `$PATH`.
+- A valid `kubeconfig` pointing at the target cluster (the default `~/.kube/config` is used automatically).
+
+```bash
+# verify Helm can reach your cluster
+helm list --all-namespaces
 ```
 
 ## Installation
@@ -106,6 +118,66 @@ eolctl scan project ./monorepo --output table
 | go      | 1.22    | 2025-08-01 | MEDIUM   |
 | nodejs  | 18      | 2025-04-30 | CRITICAL |
 +---------+---------+------------+----------+
+```
+
+### Scan a Kubernetes cluster
+
+`eolctl` lists every Helm release in your cluster (across all namespaces), uses Claude to map each chart to its endoflife.date product slug, and then checks the app version for EOL status and risk level. For charts that endoflife.date does not track, it falls back to [ArtifactHub](https://artifacthub.io/) and derives risk from version staleness.
+
+```bash
+eolctl scan cluster --output table
+```
+
+```
++------------------+-------------+--------------+---------+--------------------+----------+
+|     RELEASE      |  NAMESPACE  |   PRODUCT    | VERSION |        EOL         |   RISK   |
++------------------+-------------+--------------+---------+--------------------+----------+
+| nginx-ingress    | ingress      | nginx        | 1.23    | 2025-04-01         | CRITICAL |
+| cert-manager     | cert-manager | cert-manager | 1.11    | latest: 1.14.2     | HIGH     |
+| prometheus       | monitoring   | prometheus   | 2.44    | latest: 2.52.0     | MEDIUM   |
+| redis            | default      | redis        | 7.0     | 2027-01-01         | LOW      |
++------------------+-------------+--------------+---------+--------------------+----------+
+```
+
+Output as JSON:
+
+```bash
+eolctl scan cluster --output json
+```
+
+```json
+[
+  {
+    "release": "nginx-ingress",
+    "namespace": "ingress",
+    "chart": "ingress-nginx-4.7.1",
+    "product": "nginx",
+    "version": "1.23",
+    "eol": "2025-04-01",
+    "risk": "CRITICAL",
+    "days_until_eol": -57
+  }
+]
+```
+
+#### AI risk report and upgrade suggestions for cluster
+
+The `--risk-report` and `--suggest-version` flags work the same way as on `scan project`:
+
+```bash
+eolctl scan cluster --output table --risk-report --suggest-version
+```
+
+```
+--- AI Risk Summary ---
+Your nginx 1.23 deployment reached end-of-life on April 1, 2025 and is
+actively accumulating unpatched CVEs. cert-manager 1.11 is three major versions
+behind 1.14; upgrade to unblock critical TLS policy fixes. Prometheus and Redis
+are healthy but should be scheduled for minor-version bumps in the next cycle.
+
+--- AI Upgrade Suggestions ---
+For nginx 1.23 (EOL: 2025-04-01, CRITICAL): upgrade to 1.27 (current stable).
+For cert-manager 1.11 (HIGH): upgrade to 1.14.2 via Helm chart bump.
 ```
 
 ### AI risk narrative
