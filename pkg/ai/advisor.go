@@ -77,7 +77,7 @@ func SuggestUpgradePath(items []UpgradeItem) (string, error) {
 		return "", fmt.Errorf("failed to serialize upgrade data: %w", err)
 	}
 
-	prompt := fmt.Sprintf("You are a software upgrade advisor. For each component listed below, recommend the specific version to upgrade to and briefly explain why. Be concise and direct:\n%s", string(data))
+	prompt := fmt.Sprintf("You are a software upgrade advisor. For each component listed below, recommend the specific version to upgrade to and briefly explain why. Use plain text only — no markdown, no bullet points, no tables, no bold or italic syntax:\n%s", string(data))
 
 	resp, err := client.Messages.New(context.Background(), anthropic.MessageNewParams{
 		Model:     anthropic.ModelClaudeOpus4_6,
