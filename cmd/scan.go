@@ -20,6 +20,7 @@ var scanCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(scanCmd)
 	scanCmd.AddCommand(projectCmd)
+	scanCmd.AddCommand(clusterCmd)
 
 	// Here you will define your flags and configuration settings.
 

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `scan cluster` command — scans all Helm releases across namespaces for EOL status and risk level
+- `pkg/helm` package — `ListReleases()` wraps `helm list --all-namespaces -o json` to enumerate cluster releases
+- `pkg/artifacthub` package — ArtifactHub API client used as fallback when endoflife.date has no data for a chart; derives risk from version staleness and deprecation status
+- `ai.DetectHelmEOL` — uses Claude Haiku to map Helm chart names to endoflife.date product slugs and extract major.minor versions
+- Fallback chain in `scan cluster`: endoflife.date → ArtifactHub → UNKNOWN, ensuring every release gets a result
+- `--risk-report` and `--suggest-version` flags on `scan cluster`, consistent with `scan project`
+
 ---
 
 ## [1.3.1] - 2026-05-27
