@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.3.1] - 2026-05-27
+
 ### Added
 - `--suggest-version` and `--risk-report` promoted to global persistent flags — available on all commands
 - `--risk-report` and `--suggest-version` support added to `get product` command
