@@ -13,17 +13,24 @@ import (
 )
 
 var (
-	c          *cache.Cache
-	once       sync.Once
-	homeDir, _ = os.UserHomeDir()
-	cacheFile  = filepath.Join(homeDir, ".eolctl", "cache.gob")
-	cacheDir   = filepath.Dir(cacheFile)
+	c         *cache.Cache
+	once      sync.Once
+	cacheFile string
+	cacheDir  string
 )
 
 func InitializeCacheFile() (*cache.Cache, error) {
 	var initErr error
 
 	once.Do(func() {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			initErr = fmt.Errorf("failed to get home directory: %w", err)
+			return
+		}
+		cacheFile = filepath.Join(homeDir, ".eolctl", "cache.gob")
+		cacheDir = filepath.Dir(cacheFile)
+
 		if err := os.MkdirAll(cacheDir, 0755); err != nil {
 			initErr = fmt.Errorf("failed to create cache directory: %w", err)
 			return

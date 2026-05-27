@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -74,12 +73,13 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		// Ignore "file not found" errors; log other errors
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			log.Fatalf("Error reading config file: %v", err)
+			fmt.Fprintf(os.Stderr, "Error reading config file: %v\n", err)
+			os.Exit(1)
 		}
 	}
 
 	// Log the config file being used
 	if viper.ConfigFileUsed() != "" {
-		log.Printf("Using config file: %s", viper.ConfigFileUsed())
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }

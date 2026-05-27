@@ -27,3 +27,4 @@ go.work.sum
 *.log
 
 bin/*
+bin/
