@@ -87,7 +87,7 @@ var projectCmd = &cobra.Command{
 			table.SetHeader([]string{"Product", "Version", "Eol", "Risk"})
 
 			for _, result := range results {
-				table.Append([]string{result.Product, result.Version, result.Eol, result.Risk})
+				renderRichRow(table, []string{result.Product, result.Version, result.Eol, result.Risk})
 			}
 			table.Render()
 		} else {
@@ -95,38 +95,20 @@ var projectCmd = &cobra.Command{
 		}
 
 		riskReport, _ := cmd.Flags().GetBool("risk-report")
+		suggestVersion, _ := cmd.Flags().GetBool("suggest-version")
 
-		var items []ai.RiskItem
+		if riskReport || suggestVersion {
+			var riskItems []ai.RiskItem
+			var upgradeItems []ai.UpgradeItem
 
-		if riskReport {
 			for _, item := range results {
-				items = append(items, ai.RiskItem{
+				riskItems = append(riskItems, ai.RiskItem{
 					Product:      item.Product,
 					Version:      item.Version,
 					EOL:          item.Eol,
 					RiskLevel:    item.Risk,
 					DaysUntilEOL: item.DaysUntilEOL,
 				})
-			}
-
-			if len(items) == 0 {
-				logger.Warn("no risk data to summarize — no components were successfully scanned")
-			} else {
-				narrative, err := ai.GenerateRiskNarrative(items)
-				if err != nil {
-					logger.Errorf("failed to generate risk narrative: %v", err)
-				} else {
-					fmt.Println("\n--- AI Risk Summary ---")
-					fmt.Println(narrative)
-				}
-			}
-		}
-
-		suggestVersion, _ := cmd.Flags().GetBool("suggest-version")
-
-		if suggestVersion {
-			var upgradeItems []ai.UpgradeItem
-			for _, item := range results {
 				upgradeItems = append(upgradeItems, ai.UpgradeItem{
 					Language:  item.Product,
 					Version:   item.Version,
@@ -135,16 +117,11 @@ var projectCmd = &cobra.Command{
 				})
 			}
 
-			if len(upgradeItems) == 0 {
-				logger.Warn("no upgrade data available — no components were successfully scanned")
-			} else {
-				suggestions, err := ai.SuggestUpgradePath(upgradeItems)
-				if err != nil {
-					logger.Errorf("failed to generate upgrade suggestions: %v", err)
-				} else {
-					fmt.Println("\n--- AI Upgrade Suggestions ---")
-					fmt.Println(suggestions)
-				}
+			if riskReport {
+				printRiskNarrative(riskItems, logger)
+			}
+			if suggestVersion {
+				printUpgradeSuggestions(upgradeItems, logger)
 			}
 		}
 	},
@@ -157,8 +134,6 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	projectCmd.Flags().Bool("suggest-version", false, "Suggest a version upgrade based on the current project version")
-	projectCmd.Flags().Bool("risk-report", false, "Generate an AI-powered risk narrative using Claude")
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// projectCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")

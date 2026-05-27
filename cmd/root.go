@@ -51,6 +51,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Display the version of this CLI tool")
 	rootCmd.PersistentFlags().StringP("output", "o", "table", "Output type table/json/yaml")
 	rootCmd.PersistentFlags().String("log-level", "", "Set log level")
+	rootCmd.PersistentFlags().Bool("suggest-version", false, "Suggest a version upgrade using AI")
+	rootCmd.PersistentFlags().Bool("risk-report", false, "Generate an AI-powered risk narrative using Claude")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

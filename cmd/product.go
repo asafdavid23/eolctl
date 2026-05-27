@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/asafdavid23/eolctl/internal/logging"
+	ai "github.com/asafdavid23/eolctl/pkg/ai"
 	helpers "github.com/asafdavid23/eolctl/pkg/helpers"
 
 	"github.com/olekukonko/tablewriter"
@@ -101,10 +102,10 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 			table := tablewriter.NewWriter(os.Stdout)
 			switch v := result.(type) {
 			case []interface{}:
-				table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
+				table.SetHeader([]string{"Cycle", "Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "Support", "Risk"})
 				for _, item := range v {
 					if release, ok := item.(map[string]interface{}); ok {
-						row := []string{
+						renderRichRow(table, []string{
 							helpers.GetStringValue(release["cycle"]),
 							helpers.GetStringValue(release["latest"]),
 							helpers.GetStringValue(release["latestReleaseDate"]),
@@ -112,28 +113,79 @@ By specifying the product name or ID, you can retrieve its EOL status, version i
 							helpers.GetStringValue(release["lts"]),
 							helpers.GetStringValue(release["eol"]),
 							helpers.GetStringValue(release["support"]),
-						}
-						table.Append(row)
+							string(helpers.CalculateRisk(release["eol"]).Level),
+						})
 					}
 				}
 			case map[string]interface{}:
-				table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "SUPPORT"})
-
-				row := []string{
+				table.SetHeader([]string{"Latest", "LatestReleaseDate", "ReleaseDate", "LTS", "EOL", "Support", "Risk"})
+				renderRichRow(table, []string{
 					helpers.GetStringValue(v["latest"]),
 					helpers.GetStringValue(v["latestReleaseDate"]),
 					helpers.GetStringValue(v["releaseDate"]),
 					helpers.GetStringValue(v["lts"]),
 					helpers.GetStringValue(v["eol"]),
 					helpers.GetStringValue(v["support"]),
-				}
-				table.Append(row)
+					string(helpers.CalculateRisk(v["eol"]).Level),
+				})
 			}
 			table.Render()
 		} else if output == "json" {
 			fmt.Print(string(outputData))
 		} else {
 			logger.Fatal("output type is not valid.")
+		}
+
+		riskReport, _ := cmd.Flags().GetBool("risk-report")
+		suggestVersion, _ := cmd.Flags().GetBool("suggest-version")
+
+		if riskReport || suggestVersion {
+			var riskItems []ai.RiskItem
+			var upgradeItems []ai.UpgradeItem
+
+			switch v := result.(type) {
+			case map[string]interface{}:
+				riskInfo := helpers.CalculateRisk(v["eol"])
+				riskItems = append(riskItems, ai.RiskItem{
+					Product:      name,
+					Version:      version,
+					EOL:          helpers.GetStringValue(v["eol"]),
+					RiskLevel:    string(riskInfo.Level),
+					DaysUntilEOL: riskInfo.DaysUntilEOL,
+				})
+				upgradeItems = append(upgradeItems, ai.UpgradeItem{
+					Language:  name,
+					Version:   version,
+					EOL:       helpers.GetStringValue(v["eol"]),
+					RiskLevel: string(riskInfo.Level),
+				})
+			case []interface{}:
+				for _, item := range v {
+					if cycle, ok := item.(map[string]interface{}); ok {
+						riskInfo := helpers.CalculateRisk(cycle["eol"])
+						riskItems = append(riskItems, ai.RiskItem{
+							Product:      name,
+							Version:      helpers.GetStringValue(cycle["cycle"]),
+							EOL:          helpers.GetStringValue(cycle["eol"]),
+							RiskLevel:    string(riskInfo.Level),
+							DaysUntilEOL: riskInfo.DaysUntilEOL,
+						})
+						upgradeItems = append(upgradeItems, ai.UpgradeItem{
+							Language:  name,
+							Version:   helpers.GetStringValue(cycle["cycle"]),
+							EOL:       helpers.GetStringValue(cycle["eol"]),
+							RiskLevel: string(riskInfo.Level),
+						})
+					}
+				}
+			}
+
+			if riskReport {
+				printRiskNarrative(riskItems, logger)
+			}
+			if suggestVersion {
+				printUpgradeSuggestions(upgradeItems, logger)
+			}
 		}
 	},
 }
